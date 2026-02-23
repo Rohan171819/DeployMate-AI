@@ -6,7 +6,14 @@ from langchain_ollama import ChatOllama
 import os
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
+from dotenv import load_dotenv
+import os
 
+load_dotenv() 
+
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
+os.environ["LANGCHAIN_PROJECT"] = "DeployMate-AI"
 
 # Local Ollama Model
 llm = ChatOllama(model="llama3.2:3b")
