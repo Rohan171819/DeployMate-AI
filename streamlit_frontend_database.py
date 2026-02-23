@@ -49,7 +49,11 @@ if 'message_history' not in st.session_state:
 if 'thread_id' not in st.session_state:
     st.session_state['thread_id'] = generate_thread_id()
 
-CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}
+#CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}
+
+CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']},
+          "metadata": {"thread_id": st.session_state['thread_id']},
+          "run_name": "chat_run",}
 
 if 'chat_threads' not in st.session_state:
     st.session_state['chat_threads'] = retrieve_all_threads() or []
