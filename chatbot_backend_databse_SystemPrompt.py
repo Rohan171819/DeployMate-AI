@@ -1,4 +1,3 @@
-
 from langgraph.graph import StateGraph,START,END
 from typing import TypedDict, Annotated, List
 from langchain_core.messages import BaseMessage, HumanMessage
@@ -9,7 +8,7 @@ import sqlite3
 from dotenv import load_dotenv
 import os
 from langchain_core.messages import SystemMessage
-
+from langgraph.graph.message import add_messages
 load_dotenv() 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -32,11 +31,57 @@ Always provide clear, step-by-step, beginner-friendly guidance.
 When user shares an error, identify root cause first, then provide exact fix.
 """)
 
+error_analyzer_prompt = SystemMessage(content="""
+You are the Error Analyzer Agent inside DeployMate AI.
+When given an error, ALWAYS respond in this exact structure:
+
+## 🔍 Root Cause
+Explain what caused this error in simple language.
+
+## 💥 Why It Happened  
+Explain the reason behind this error.
+
+## ✅ Exact Fix
+Provide the exact fix with code snippet.
+
+## 🛡️ Prevention
+How to avoid this error in future.
+
+Be beginner-friendly, clear, and precise.
+""")
+
+fix_suggester_prompt = SystemMessage(content="""
+You are the Fix Suggester Agent inside DeployMate AI.
+Your job is to provide precise, working code fixes.
+
+ALWAYS:
+1. Detect the user's tech stack automatically from context
+2. Provide complete, copy-paste ready fix
+3. Explain what each fix does line by line
+4. Show before vs after code comparison
+5. Make sure developer LEARNS, not just copy-pastes
+
+Format your response clearly with code blocks.
+""")
 
 
-from langgraph.graph.message import add_messages
 class ChatState(TypedDict):
     messages : Annotated[List[BaseMessage],add_messages]
+
+# ─── ERROR DETECTOR ───────────────────────────────────────
+
+def is_error_message(message: str) -> bool:
+    error_keywords = [
+        "error", "traceback", "exception", "failed",
+        "exit code", "cannot", "unable to", "not found",
+        "permission denied", "connection refused",
+        "modulenotfounderror", "syntaxerror", "typeerror",
+        "valueerror", "importerror", "runtimeerror",
+        "docker", "container", "pipeline", "deployment failed"
+    ]
+    message_lower = message.lower()
+    return any(keyword in message_lower for keyword in error_keywords)
+
 
 
 def chat_node(state:ChatState):
@@ -47,6 +92,21 @@ def chat_node(state:ChatState):
     #store to state.
     return {'messages' : [response]}
 
+def error_analyzer_node(state: ChatState):
+    messages = [error_analyzer_prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response]}
+
+def fix_suggester_node(state: ChatState):
+    messages = [fix_suggester_prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response]}
+
+def route_message(state: ChatState):
+    last_message = state['messages'][-1].content
+    if is_error_message(last_message):
+        return "error_analyzer_node"
+    return "chat_node"
 
 
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
@@ -55,11 +115,22 @@ checkpointer = SqliteSaver(conn = conn)
 graph = StateGraph(ChatState)
 
 # addinng nodes..
-graph.add_node('chat_node',chat_node)
+graph.add_node('chat_node', chat_node)
+graph.add_node('error_analyzer_node', error_analyzer_node)
+graph.add_node('fix_suggester_node', fix_suggester_node)
+
+# Conditional routing — START to either error analyzer or regular chat based on message content.
+graph.add_conditional_edges(START, route_message, {
+    "error_analyzer_node": "error_analyzer_node",
+    "chat_node": "chat_node"
+})
 
 #adding edges.
-graph.add_edge(START,'chat_node')
-graph.add_edge('chat_node',END)
+graph.add_edge('error_analyzer_node', 'fix_suggester_node')
+
+# Both fix suggester and regular chat lead to END, allowing the conversation to conclude after either path.
+graph.add_edge('fix_suggester_node', END)
+graph.add_edge('chat_node', END)
 
 chatbot = graph.compile(checkpointer=checkpointer)
 
