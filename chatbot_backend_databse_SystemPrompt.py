@@ -64,6 +64,28 @@ ALWAYS:
 Format your response clearly with code blocks.
 """)
 
+deploy_guide_prompt = SystemMessage(content="""
+You are the Deployment Guide Agent inside DeployMate AI.
+When user wants to deploy, ALWAYS respond in this structure:
+
+## 🎯 Deployment Plan
+Identify what they want to deploy and where.
+
+## 📋 Prerequisites
+What needs to be ready before deploying.
+
+## 🚀 Step-by-Step Guide
+Exact commands and steps — numbered clearly.
+
+## ⚙️ Configuration
+Dockerfile, env vars, ports — whatever is needed.
+
+## ✅ Verification
+How to confirm deployment was successful.
+
+Be specific, beginner-friendly, with exact commands.
+""")
+
 
 class ChatState(TypedDict):
     messages : Annotated[List[BaseMessage],add_messages]
@@ -82,7 +104,14 @@ def is_error_message(message: str) -> bool:
     message_lower = message.lower()
     return any(keyword in message_lower for keyword in error_keywords)
 
-
+def is_deploy_message(message: str) -> bool:
+    deploy_keywords = [
+        "deploy", "deployment", "publish", "host", "hosting",
+        "aws", "railway", "render", "vps", "ec2",
+        "go live", "production", "server", "cloud",
+        "dockerfile", "docker compose", "nginx"
+    ]
+    return any(keyword in message for keyword in deploy_keywords)
 
 def chat_node(state:ChatState):
     #taking user query from the state.
@@ -106,7 +135,17 @@ def route_message(state: ChatState):
     last_message = state['messages'][-1].content
     if is_error_message(last_message):
         return "error_analyzer_node"
-    return "chat_node"
+    elif is_deploy_message(last_message):
+        return "deploy_guide_node"
+        
+    # General question
+    else:
+        return "chat_node"
+    
+def deploy_guide_node(state: ChatState):
+    messages = [deploy_guide_prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response]}
 
 
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
@@ -118,11 +157,14 @@ graph = StateGraph(ChatState)
 graph.add_node('chat_node', chat_node)
 graph.add_node('error_analyzer_node', error_analyzer_node)
 graph.add_node('fix_suggester_node', fix_suggester_node)
+graph.add_node('deploy_guide_node', deploy_guide_node)
+
 
 # Conditional routing — START to either error analyzer or regular chat based on message content.
 graph.add_conditional_edges(START, route_message, {
     "error_analyzer_node": "error_analyzer_node",
-    "chat_node": "chat_node"
+    "chat_node": "chat_node",
+    "deploy_guide_node": "deploy_guide_node"
 })
 
 #adding edges.
@@ -131,6 +173,7 @@ graph.add_edge('error_analyzer_node', 'fix_suggester_node')
 # Both fix suggester and regular chat lead to END, allowing the conversation to conclude after either path.
 graph.add_edge('fix_suggester_node', END)
 graph.add_edge('chat_node', END)
+graph.add_edge('deploy_guide_node', END)
 
 chatbot = graph.compile(checkpointer=checkpointer)
 
