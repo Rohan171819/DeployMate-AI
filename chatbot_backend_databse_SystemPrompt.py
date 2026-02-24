@@ -18,6 +18,7 @@ os.environ["LANGCHAIN_PROJECT"] = "DeployMate-AI"
 # Local Ollama Model
 llm = ChatOllama(model="llama3.2:3b")
 
+#---------------------Prompts-----------------------
 system_prompt = SystemMessage(content="""
 You are DeployMate AI — an expert DevOps co-pilot for junior developers.
 You specialize in:
@@ -86,12 +87,37 @@ How to confirm deployment was successful.
 Be specific, beginner-friendly, with exact commands.
 """)
 
+code_review_prompt = SystemMessage(content="""
+You are the Code Review Agent inside DeployMate AI.
+When given code, ALWAYS respond in this structure:
+
+## 🔍 Code Summary
+What this code does briefly.
+
+## 🚨 Security Issues
+Any vulnerabilities found — with line references.
+
+## ⚡ Performance Issues  
+Any bottlenecks or inefficiencies found.
+
+## ❌ Bad Practices
+Anti-patterns or poor coding practices.
+
+## ✅ Improved Code
+Provide the fixed, improved version with explanations.
+
+Be constructive, educational, and specific.
+""")
+
+
+
 
 class ChatState(TypedDict):
     messages : Annotated[List[BaseMessage],add_messages]
 
 # ─── ERROR DETECTOR ───────────────────────────────────────
 
+# Helper functions to detect message intent based on keywords.
 def is_error_message(message: str) -> bool:
     error_keywords = [
         "error", "traceback", "exception", "failed",
@@ -113,6 +139,16 @@ def is_deploy_message(message: str) -> bool:
     ]
     return any(keyword in message for keyword in deploy_keywords)
 
+def is_code_review_message(message: str) -> bool:
+    code_keywords = [
+        "review my code", "check my code", "code review",
+        "is this code good", "improve my code", "optimize",
+        "security issue", "bad practice", "refactor",
+        "```", "def ", "class ", "function", "import "
+    ]
+    return any(keyword in message for keyword in code_keywords)
+
+# ─── NODES ──────────────────────────────────────────────
 def chat_node(state:ChatState):
     #taking user query from the state.
     messages = [system_prompt] +state['messages']
@@ -137,6 +173,8 @@ def route_message(state: ChatState):
         return "error_analyzer_node"
     elif is_deploy_message(last_message):
         return "deploy_guide_node"
+    elif is_code_review_message(last_message):
+        return "code_review_node"
         
     # General question
     else:
@@ -146,6 +184,12 @@ def deploy_guide_node(state: ChatState):
     messages = [deploy_guide_prompt] + state['messages']
     response = llm.invoke(messages)
     return {'messages': [response]}
+
+def code_review_node(state: ChatState):
+    messages = [code_review_prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response]}
+
 
 
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
@@ -158,13 +202,14 @@ graph.add_node('chat_node', chat_node)
 graph.add_node('error_analyzer_node', error_analyzer_node)
 graph.add_node('fix_suggester_node', fix_suggester_node)
 graph.add_node('deploy_guide_node', deploy_guide_node)
-
+graph.add_node('code_review_node', code_review_node)
 
 # Conditional routing — START to either error analyzer or regular chat based on message content.
 graph.add_conditional_edges(START, route_message, {
     "error_analyzer_node": "error_analyzer_node",
     "chat_node": "chat_node",
-    "deploy_guide_node": "deploy_guide_node"
+    "deploy_guide_node": "deploy_guide_node",
+    "code_review_node": "code_review_node",
 })
 
 #adding edges.
@@ -174,6 +219,7 @@ graph.add_edge('error_analyzer_node', 'fix_suggester_node')
 graph.add_edge('fix_suggester_node', END)
 graph.add_edge('chat_node', END)
 graph.add_edge('deploy_guide_node', END)
+graph.add_edge('code_review_node', END)
 
 chatbot = graph.compile(checkpointer=checkpointer)
 
