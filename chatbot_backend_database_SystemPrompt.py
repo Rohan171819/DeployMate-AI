@@ -22,7 +22,7 @@ os.environ["LANGCHAIN_PROJECT"] = "DeployMate-AI"
 
 # Local Ollama Model
 llm = ChatOllama(model="llama3.2:3b")
-embeddings = OllamaEmbeddings(model="all-minilm:latest")
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
 
 #---------------------Prompts-----------------------
@@ -169,7 +169,7 @@ def ingest_pdf(file_bytes: bytes,thread_id: str,filename: Optional[str] = None)-
     try:
         loader = PyPDFLoader(temp_file_path)
         docs = loader.load()
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200,separators=["\n\n", "\n", " ", ""])
+        splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100,separators=["\n\n", "\n", " ", ""])
         chunks = splitter.split_documents(docs)
 
         vector_store = FAISS.from_documents(chunks,embeddings)
