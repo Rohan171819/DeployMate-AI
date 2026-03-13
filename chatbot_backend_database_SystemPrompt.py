@@ -125,7 +125,7 @@ class ChatState(TypedDict):
 # ─── ERROR DETECTOR ───────────────────────────────────────
 _THREAD_RETRIEVERS = {}
 _THREAD_METADATA = {}
-
+_RAG_CACHE = {}
 # Helper functions to detect message intent based on keywords.
 def is_error_message(message: str) -> bool:
     error_keywords = [
@@ -173,7 +173,7 @@ def ingest_pdf(file_bytes: bytes,thread_id: str,filename: Optional[str] = None)-
         chunks = splitter.split_documents(docs)
 
         vector_store = FAISS.from_documents(chunks,embeddings)
-        retriever = vector_store.as_retriever(search_kwargs={"k": 4})
+        retriever = vector_store.as_retriever(search_kwargs={"k": 2})
 
         _THREAD_RETRIEVERS[str(thread_id)] = retriever
         _THREAD_METADATA[str(thread_id)] = {
@@ -198,6 +198,23 @@ def ingest_pdf(file_bytes: bytes,thread_id: str,filename: Optional[str] = None)-
 def _get_retriever(thread_id):
     return _THREAD_RETRIEVERS.get(str(thread_id))
 
+def get_rag_context(thread_id: str, query:str)-> str:
+    cache_key = f"{thread_id}:{query[:50]}"
+
+    # if the context is in the cache to add directly in Cache.
+    if cache_key in _RAG_CACHE:
+        return _RAG_CACHE[cache_key]
+    
+    retriever = _get_retriever(thread_id)
+    if not retriever:
+        return ""
+    docs = retriever.invoke(query)
+    context = "\n\n".join([doc.page_content for doc in docs])
+
+    #Storing the data in the cache.
+    _RAG_CACHE[cache_key] = context
+    return context
+
 def get_thread_id_from_config(config: RunnableConfig) -> str:
     return config.get("configurable", {}).get("thread_id", "")
 
@@ -205,15 +222,10 @@ def get_thread_id_from_config(config: RunnableConfig) -> str:
 
 def chat_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
-    # RAG context lo agar file uploaded hai
-    rag_context = ""
-    if thread_id:
-        retriever = _get_retriever(thread_id)
-        if retriever:
-            query = state['messages'][-1].content
-            docs = retriever.invoke(query)
-            rag_context = "\n\n".join([doc.page_content for doc in docs])
-
+    
+    query = state["messages"][-1].content
+    rag_context = get_rag_context(thread_id, query)
+    
     # Context ko system prompt mein inject karo
     if rag_context:
         dynamic_prompt = SystemMessage(content=f"""
@@ -232,12 +244,8 @@ DOCUMENT CONTEXT (Answer based on this):
 def error_analyzer_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
-    rag_context = ""
-    retriever = _get_retriever(thread_id)
-    if retriever:
-        query = state['messages'][-1].content
-        docs = retriever.invoke(query)
-        rag_context = "\n\n".join([doc.page_content for doc in docs])
+    query = state["messages"][-1].content
+    rag_context = get_rag_context(thread_id, query)
 
     if rag_context:
         prompt = SystemMessage(content=f"""
@@ -256,12 +264,8 @@ DOCUMENT CONTEXT:
 def fix_suggester_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
-    rag_context = ""
-    retriever = _get_retriever(thread_id)
-    if retriever:
-        query = state['messages'][-1].content
-        docs = retriever.invoke(query)
-        rag_context = "\n\n".join([doc.page_content for doc in docs])
+    query = state["messages"][-1].content
+    rag_context = get_rag_context(thread_id, query)
 
     if rag_context:
         prompt = SystemMessage(content=f"""
@@ -293,12 +297,8 @@ def route_message(state: ChatState,config: RunnableConfig):
 def deploy_guide_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
-    rag_context = ""
-    retriever = _get_retriever(thread_id)
-    if retriever:
-        query = state['messages'][-1].content
-        docs = retriever.invoke(query)
-        rag_context = "\n\n".join([doc.page_content for doc in docs])
+    query = state["messages"][-1].content
+    rag_context = get_rag_context(thread_id, query)
 
     if rag_context:
         prompt = SystemMessage(content=f"""
@@ -317,12 +317,8 @@ DOCUMENT CONTEXT:
 def code_review_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
-    rag_context = ""
-    retriever = _get_retriever(thread_id)
-    if retriever:
-        query = state['messages'][-1].content
-        docs = retriever.invoke(query)
-        rag_context = "\n\n".join([doc.page_content for doc in docs])
+    query = state["messages"][-1].content
+    rag_context = get_rag_context(thread_id, query)
 
     if rag_context:
         prompt = SystemMessage(content=f"""
