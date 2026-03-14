@@ -21,9 +21,16 @@ os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
 os.environ["LANGCHAIN_PROJECT"] = "DeployMate-AI"
 
 # Local Ollama Model
-llm = ChatOllama(model="llama3.2:3b")
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
+llm = ChatOllama(
+    model="llama3.2:3b",
+    base_url="http://host.docker.internal:11434"  
+)
+
+embeddings = OllamaEmbeddings(
+    model="nomic-embed-text",
+    base_url="http://host.docker.internal:11434"  
+)
 
 #---------------------Prompts-----------------------
 system_prompt = SystemMessage(content="""
