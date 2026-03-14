@@ -1,5 +1,5 @@
 import streamlit as st
-from chatbot_backend_databse_SystemPrompt import chatbot,retrieve_all_threads
+from chatbot_backend_database_SystemPrompt import chatbot,retrieve_all_threads, ingest_pdf
 from langchain_core.messages import HumanMessage
 import uuid
 
@@ -15,6 +15,7 @@ def reset_chat():
     add_thread(st.session_state['thread_id'])
     st.session_state['message_history'] = []
     st.session_state['thread_names'][str(thread_id)] = "Chat"
+    st.session_state['uploaded_file_name'] = None
 
 def add_thread(thread_id):
     if st.session_state['chat_threads'] is None:
@@ -63,18 +64,55 @@ add_thread(st.session_state['thread_id'])
 if 'thread_names' not in st.session_state:
     st.session_state['thread_names'] = {}
 
+if 'uploaded_file_name' not in st.session_state:  
+    st.session_state['uploaded_file_name'] = None
+
 #-------------------Sidebar UI-------------------------------
 st.sidebar.image("deploymate-logo.svg", use_container_width=True)
 st.sidebar.title("DeployMate AI")
 st.sidebar.caption("Your AI DevOps Co-Pilot")
 
-if st.sidebar.button("New Chat"):
+if st.sidebar.button("➕ New Chat"):
     reset_chat()
+    st.rerun()
+st.sidebar.divider()
 
+# ─── PDF UPLOAD — SIDEBAR MEIN 👈 ────────────────────────
+st.sidebar.markdown("### 📄 Upload Document")
+
+uploaded_file = st.sidebar.file_uploader(
+    "Upload PDF for RAG",
+    type=["pdf"],
+    help="Upload any DevOps doc, error log PDF, or guide"
+)
+if uploaded_file:
+    if st.session_state['uploaded_file_name'] != uploaded_file.name:
+        with st.spinner("⚡ Processing PDF in background..."):
+            result = ingest_pdf(
+                file_bytes=uploaded_file.read(),
+                thread_id=str(st.session_state['thread_id']),
+                filename=uploaded_file.name
+            )
+        st.session_state['uploaded_file_name'] = uploaded_file.name
+        # Success info dikhao
+        st.sidebar.success(
+                f"**{result['filename']}**\n\n"
+                f"Pages: {result['documents']} | "
+                f"Chunks: {result['chunks']}"
+            )
+    else:
+        # Already uploaded — sirf naam dikhao
+        st.sidebar.success(f"✅ **{st.session_state['uploaded_file_name']}** loaded")
+
+st.sidebar.divider()
+
+
+st.sidebar.markdown("### 💬 Conversations")
 for thread_id in st.session_state['chat_threads'][::-1]: # Display threads in reverse order (latest first)
     thread_name = get_thread_name(thread_id)
     if st.sidebar.button(thread_name,key = str(thread_id)):
         st.session_state['thread_id'] = thread_id
+        st.session_state['uploaded_file_name'] = None
         messages = load_conversations(thread_id)
 
         temp_messages =[]
@@ -86,14 +124,19 @@ for thread_id in st.session_state['chat_threads'][::-1]: # Display threads in re
                 role = "assistant"
             temp_messages.append({"role": role, "content": message.content})
         st.session_state['message_history'] = temp_messages
+        st.rerun()
 
 #--------------------Main UI-------------------------------
+if st.session_state['uploaded_file_name']:
+    st.info(f"📄 **{st.session_state['uploaded_file_name']}** is active — Ask anything about this document!")
+
+
 # loading the message history.
 for message in st.session_state['message_history']:
     with st.chat_message(message["role"], avatar="👨‍💻" if message["role"] == "user" else "🚀"):
         st.markdown(message["content"])
 
-user_input = st.chat_input("Type your message here...")
+user_input = st.chat_input("Type your message or ask about uploaded or ask about uploaded PDF...")
 
 if user_input:
 
