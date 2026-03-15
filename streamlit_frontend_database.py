@@ -2,6 +2,7 @@ import streamlit as st
 from chatbot_backend_database_SystemPrompt import chatbot,retrieve_all_threads, ingest_pdf
 from langchain_core.messages import HumanMessage
 import uuid
+from langgraph.types import interrupt, Command
 
 
 #-----------------------------utility functions-----------------------------
@@ -67,6 +68,12 @@ if 'thread_names' not in st.session_state:
 if 'uploaded_file_name' not in st.session_state:  
     st.session_state['uploaded_file_name'] = None
 
+if 'hitl_pending' not in st.session_state:
+    st.session_state['hitl_pending'] = False
+
+if 'hitl_data' not in st.session_state:
+    st.session_state['hitl_data'] = None
+
 #-------------------Sidebar UI-------------------------------
 st.sidebar.image("deploymate-logo.svg", use_container_width=True)
 st.sidebar.title("DeployMate AI")
@@ -76,6 +83,29 @@ if st.sidebar.button("➕ New Chat"):
     reset_chat()
     st.rerun()
 st.sidebar.divider()
+
+
+# ─── HITL Handler Function ───────────────────────────────
+def check_for_interrupt(config):
+    """Check karo ki graph pause hua hai kya"""
+    try:
+        state = chatbot.get_state(config=config)
+        # Interrupt pending hai?
+        if state.next and len(state.next) > 0:
+            # Interrupt data nikalo
+            for task in state.tasks:
+                if hasattr(task, 'interrupts') and task.interrupts:
+                    return task.interrupts[0].value
+        return None
+    except Exception:
+        return None
+
+def resume_graph(config, approved: bool):
+    """Human decision ke saath graph resume karo"""
+    chatbot.invoke(
+        Command(resume={"approved": approved}),
+        config=config
+    )
 
 # ─── PDF UPLOAD — SIDEBAR MEIN 👈 ────────────────────────
 st.sidebar.markdown("### 📄 Upload Document")
@@ -136,29 +166,110 @@ for message in st.session_state['message_history']:
     with st.chat_message(message["role"], avatar="👨‍💻" if message["role"] == "user" else "🚀"):
         st.markdown(message["content"])
 
-user_input = st.chat_input("Type your message or ask about uploaded or ask about uploaded PDF...")
+# ─── HITL PENDING CHECK ──────────────────────────────────
+if st.session_state['hitl_pending'] and st.session_state['hitl_data']:
+    hitl_data = st.session_state['hitl_data']
 
-if user_input:
+    st.warning("⚠️ **Human Review Required — Agent detected a dangerous command!**")
 
-    # First add the message in message history.
-    st.session_state['message_history'].append({"role": "user", "content": user_input}) 
+    with st.expander("🔍 Review Agent's Suggested Fix", expanded=True):
+        st.markdown(hitl_data.get("suggested_response", ""))
+
+    st.markdown("**Do you want to apply this fix?**")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("✅ Approve — Apply Fix", use_container_width=True):
+            with st.spinner("Applying fix..."):
+                result = chatbot.invoke(
+                    Command(resume={"approved": True}),
+                    config=CONFIG
+                )
+            # Response capture karo
+            if result and 'messages' in result:
+                last_message = result['messages'][-1].content
+                st.session_state['message_history'].append({
+                    "role": "assistant", "content": last_message
+                })
+            st.session_state['hitl_pending'] = False
+            st.session_state['hitl_data'] = None
+            st.rerun()
+
+    with col2:
+        if st.button("❌ Reject — Get Safe Alternative", use_container_width=True):
+            with st.spinner("Finding safe alternative..."):
+                result = chatbot.invoke(
+                    Command(resume={"approved": False}),
+                    config=CONFIG
+                )
+            # Response capture karo
+            if result and 'messages' in result:
+                last_message = result['messages'][-1].content
+                st.session_state['message_history'].append({
+                    "role": "assistant", "content": last_message
+                })
+            st.session_state['hitl_pending'] = False
+            st.session_state['hitl_data'] = None
+            st.rerun()
+
+# ─── CHAT INPUT ──────────────────────────────────────────
+user_input = st.chat_input(
+    "⏸️ Review pending — Approve or Reject First..." 
+    if st.session_state['hitl_pending'] 
+    else "Type your message or ask about uploaded PDF..."
+)
+
+if user_input and not st.session_state['hitl_pending']:
+
+    st.session_state['message_history'].append({
+        "role": "user", "content": user_input
+    })
 
     current_thread = str(st.session_state['thread_id'])
     if st.session_state['thread_names'].get(current_thread) in [None, "Chat"]:
         set_thread_name(current_thread, user_input)
-        
+
     with st.chat_message("user", avatar="👨‍💻"):
         st.markdown(user_input)
 
-    # Streaming implemented..
-
     with st.chat_message("assistant", avatar="🚀"):
-        ai_message = st.write_stream(
-            message_chunk.content for message_chunk,metadata in chatbot.stream(
-                {'messages':[HumanMessage(content=user_input)]}, 
+        try:
+            ai_message = ""
+            message_placeholder = st.empty()  # Live streaming ke liye
+
+            # Stream response chunks manually
+            for message_chunk, metadata in chatbot.stream(
+                {'messages': [HumanMessage(content=user_input)]},
                 config=CONFIG,
-                stream_mode= "messages"
-            )
-        )
-    
-    st.session_state['message_history'].append({"role": "assistant", "content":ai_message }) 
+                stream_mode="messages"
+            ):
+                if hasattr(message_chunk, 'content') and message_chunk.content:
+                    ai_message += message_chunk.content
+                    # Live update karo — streaming effect
+                    message_placeholder.markdown(ai_message + "▌")
+
+            # Final response — cursor remove karo
+            if ai_message:
+                message_placeholder.markdown(ai_message)
+                st.session_state['message_history'].append({
+                    "role": "assistant", "content": ai_message
+                })
+            else:
+                # Empty response — check for HITL interrupt
+                message_placeholder.empty()
+                interrupt_data = check_for_interrupt(CONFIG)
+                if interrupt_data:
+                    st.session_state['hitl_pending'] = True
+                    st.session_state['hitl_data'] = interrupt_data
+                    st.rerun()
+
+        except Exception as e:
+            # Check for HITL interrupt on exception
+            interrupt_data = check_for_interrupt(CONFIG)
+            if interrupt_data:
+                st.session_state['hitl_pending'] = True
+                st.session_state['hitl_data'] = interrupt_data
+                st.rerun()
+            else:
+                st.error(f"Error: {str(e)}")
