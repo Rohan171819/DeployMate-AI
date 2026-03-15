@@ -14,6 +14,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import SystemMessage
 from langgraph.graph.message import add_messages
+from langgraph.types import interrupt, Command
+
 load_dotenv() 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -129,10 +131,24 @@ Be constructive, educational, and specific.
 class ChatState(TypedDict):
     messages : Annotated[List[BaseMessage],add_messages]
 
+
 # ─── ERROR DETECTOR ───────────────────────────────────────
 _THREAD_RETRIEVERS = {}
 _THREAD_METADATA = {}
+
 _RAG_CACHE = {}
+
+# HITL Only for the Dangerous keywords..
+DANGEROUS_KEYWORDS = [
+    "rm -rf", "drop database", "delete all",
+    "format", "truncate", "sudo rm",
+    "chmod 777", "iptables -F","rm -rf", "drop database", "delete all",
+    "format", "truncate", "sudo rm",
+    "chmod 777", "iptables -F", "dd if=",
+    "> /dev/sda", "mkfs", "fdisk"
+]
+
+
 # Helper functions to detect message intent based on keywords.
 def is_error_message(message: str) -> bool:
     error_keywords = [
@@ -141,10 +157,15 @@ def is_error_message(message: str) -> bool:
         "permission denied", "connection refused",
         "modulenotfounderror", "syntaxerror", "typeerror",
         "valueerror", "importerror", "runtimeerror",
-        "docker", "container", "pipeline", "deployment failed"
+        "docker", "container", "pipeline", "deployment failed",
+        "rm -rf", "sudo rm", "drop database",
+        "delete all", "format", "truncate",
+        "chmod 777", "iptables", "disk full",
+        "storage full", "clean up", "free space"
     ]
     message_lower = message.lower()
     return any(keyword in message_lower for keyword in error_keywords)
+
 
 def is_deploy_message(message: str) -> bool:
     deploy_keywords = [
@@ -155,6 +176,7 @@ def is_deploy_message(message: str) -> bool:
     ]
     return any(keyword in message for keyword in deploy_keywords)
 
+
 def is_code_review_message(message: str) -> bool:
     code_keywords = [
         "review my code", "check my code", "code review",
@@ -163,6 +185,7 @@ def is_code_review_message(message: str) -> bool:
         "```", "def ", "class ", "function", "import "
     ]
     return any(keyword in message for keyword in code_keywords)
+
 
 def ingest_pdf(file_bytes: bytes,thread_id: str,filename: Optional[str] = None)-> dict:
     """Build  a FAISS retriever for the uploded PDF and store it for the thread.
@@ -222,15 +245,37 @@ def get_rag_context(thread_id: str, query:str)-> str:
     _RAG_CACHE[cache_key] = context
     return context
 
+
 def get_thread_id_from_config(config: RunnableConfig) -> str:
     return config.get("configurable", {}).get("thread_id", "")
+
+
+def is_dangerous(response_text: str) -> bool:
+    return any(kw in response_text.lower() for kw in DANGEROUS_KEYWORDS)
+
 
 # ─── NODES ──────────────────────────────────────────────
 
 def chat_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
-    
     query = state["messages"][-1].content
+
+    if is_dangerous(query):
+        human_decision = interrupt({
+            "type": "dangerous_command",
+            "message": "⚠️ Dangerous command detected!",
+            "suggested_response": f"User asked for dangerous command: {query}",
+        })
+        if not human_decision.get("approved"):
+            return {'messages': [SystemMessage(content="""
+I recommend NOT running this command — it can be destructive!
+
+Safer alternatives:
+- `du -sh /var/log/*` — check log sizes first
+- `journalctl --vacuum-size=100M` — safely clean logs  
+- `find /var/log -name "*.gz" -delete` — only compressed logs
+""")]}
+
     rag_context = get_rag_context(thread_id, query)
     
     # Context ko system prompt mein inject karo
@@ -248,25 +293,50 @@ DOCUMENT CONTEXT (Answer based on this):
     response = llm.invoke(messages)
     return {'messages': [response]}
 
+
 def error_analyzer_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
-    
     query = state["messages"][-1].content
     rag_context = get_rag_context(thread_id, query)
 
-    if rag_context:
-        prompt = SystemMessage(content=f"""
-{error_analyzer_prompt.content}
+    # ─── HITL — User input pe check karo PEHLE ───
+    if is_dangerous(query):
+        human_decision = interrupt({
+            "type": "dangerous_command",
+            "message": "⚠️ Dangerous command detected!",
+            "suggested_response": f"User asked for dangerous command: {query}",
+        })
 
-DOCUMENT CONTEXT:
-{rag_context}
-""")
+        if human_decision.get("approved"):
+            # ✅ Approved → Original response do
+            if rag_context:
+                prompt = SystemMessage(content=f"{error_analyzer_prompt.content}\nDOCUMENT CONTEXT:\n{rag_context}")
+            else:
+                prompt = error_analyzer_prompt
+            messages = [prompt] + state['messages']
+            response = llm.invoke(messages)
+            return {'messages': [response]}
+        else:
+            # ❌ Rejected → Safe alternative do
+            return {'messages': [SystemMessage(content="""
+I recommend NOT running this command as it can be destructive.
+
+Here are safer alternatives:
+- Use `du -sh /var/log/*` to check log sizes first
+- Use `journalctl --vacuum-size=100M` to safely clean logs
+- Use `find /var/log -name "*.gz" -delete` for compressed logs only
+""")]}
+
+    # ─── Normal Flow — No dangerous command ───────
+    if rag_context:
+        prompt = SystemMessage(content=f"{error_analyzer_prompt.content}\nDOCUMENT CONTEXT:\n{rag_context}")
     else:
         prompt = error_analyzer_prompt
 
     messages = [prompt] + state['messages']
     response = llm.invoke(messages)
     return {'messages': [response]}
+
 
 def fix_suggester_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
@@ -288,6 +358,7 @@ DOCUMENT CONTEXT:
     response = llm.invoke(messages)
     return {'messages': [response]}
 
+
 def route_message(state: ChatState,config: RunnableConfig):
     last_message = state['messages'][-1].content
     if is_error_message(last_message):
@@ -300,7 +371,8 @@ def route_message(state: ChatState,config: RunnableConfig):
     # General question
     else:
         return "chat_node"
-    
+
+
 def deploy_guide_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
@@ -320,6 +392,7 @@ DOCUMENT CONTEXT:
     messages = [prompt] + state['messages']
     response = llm.invoke(messages)
     return {'messages': [response]}
+
 
 def code_review_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
@@ -341,6 +414,7 @@ DOCUMENT CONTEXT:
     response = llm.invoke(messages)
     return {'messages': [response]}
 
+
 def rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
     """ Retrieve the relevant information from the uploded file for this chat thread.
     Always include the thread_id when calling this tool."""
@@ -361,8 +435,6 @@ def rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
         "metadata": metadata,
         "source_file": _THREAD_METADATA.get(str(thread_id), {}).get("filename"),
     }
-    
-
 
 
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
@@ -386,7 +458,7 @@ graph.add_conditional_edges(START, route_message, {
 })
 
 #adding edges.
-graph.add_edge('error_analyzer_node', 'fix_suggester_node')
+graph.add_edge('error_analyzer_node', END)
 
 # Both fix suggester and regular chat lead to END, allowing the conversation to conclude after either path.
 graph.add_edge('fix_suggester_node', END)
@@ -394,7 +466,7 @@ graph.add_edge('chat_node', END)
 graph.add_edge('deploy_guide_node', END)
 graph.add_edge('code_review_node', END)
 
-chatbot = graph.compile(checkpointer=checkpointer)
+chatbot = graph.compile(checkpointer=checkpointer, interrupt_before=[])
 
 def retrieve_all_threads():
     all_threads = set()
