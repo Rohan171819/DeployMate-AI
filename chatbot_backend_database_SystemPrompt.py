@@ -184,7 +184,7 @@ def is_code_review_message(message: str) -> bool:
         "security issue", "bad practice", "refactor",
         "```", "def ", "class ", "function", "import "
     ]
-    return any(keyword in message for keyword in code_keywords)
+    return any(keyword in message.lower() for keyword in code_keywords)
 
 
 def ingest_pdf(file_bytes: bytes,thread_id: str,filename: Optional[str] = None)-> dict:
