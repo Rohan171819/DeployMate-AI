@@ -174,7 +174,7 @@ def is_deploy_message(message: str) -> bool:
         "go live", "production", "server", "cloud",
         "dockerfile", "docker compose", "nginx"
     ]
-    return any(keyword in message for keyword in deploy_keywords)
+    return any(keyword in message.lower() for keyword in deploy_keywords)
 
 
 def is_code_review_message(message: str) -> bool:
