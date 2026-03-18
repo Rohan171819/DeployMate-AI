@@ -68,19 +68,6 @@ How to avoid this error in future.
 Be beginner-friendly, clear, and precise.
 """)
 
-fix_suggester_prompt = SystemMessage(content="""
-You are the Fix Suggester Agent inside DeployMate AI.
-Your job is to provide precise, working code fixes.
-
-ALWAYS:
-1. Detect the user's tech stack automatically from context
-2. Provide complete, copy-paste ready fix
-3. Explain what each fix does line by line
-4. Show before vs after code comparison
-5. Make sure developer LEARNS, not just copy-pastes
-
-Format your response clearly with code blocks.
-""")
 
 deploy_guide_prompt = SystemMessage(content="""
 You are the Deployment Guide Agent inside DeployMate AI.
@@ -143,6 +130,12 @@ class DeploymentState(TypedDict):
     tech_stack: str        # Python/Node/React etc
     target_platform: str   # AWS/Railway/Render/VPS
     has_dockerfile: bool   # Dockerfile needed?
+
+class CodeReviewState(TypedDict):
+    messages: Annotated[List[BaseMessage], add_messages]
+    language: str          # Python/JS/Java etc
+    has_security_issue: bool
+    has_performance_issue: bool
 
 # ─── ERROR DETECTOR ───────────────────────────────────────
 _THREAD_RETRIEVERS = {}
@@ -350,25 +343,6 @@ Here are safer alternatives:
     return {'messages': [response]}
 
 
-def fix_suggester_node(state: ChatState, config: RunnableConfig):
-    thread_id = get_thread_id_from_config(config)
-    
-    query = state["messages"][-1].content
-    rag_context = get_rag_context(thread_id, query)
-
-    if rag_context:
-        prompt = SystemMessage(content=f"""
-{fix_suggester_prompt.content}
-
-DOCUMENT CONTEXT:
-{rag_context}
-""")
-    else:
-        prompt = fix_suggester_prompt
-
-    messages = [prompt] + state['messages']
-    response = llm.invoke(messages)
-    return {'messages': [response]}
 
 
 def route_message(state: ChatState,config: RunnableConfig):
@@ -540,6 +514,7 @@ def build_error_analysis_subgraph():
 
     return subgraph.compile()
 
+#----------------------------------------------------------
 def stack_detector_node(state: DeploymentState, config: RunnableConfig):
     """Detect user's tech stack from message."""
     query = state['messages'][-1].content.lower()
@@ -636,12 +611,120 @@ def build_deployment_subgraph():
     subgraph.add_edge("steps_generator", END)
 
     return subgraph.compile()
+#--------------------------------------------------------------------------
 
+def language_detector_node(state: CodeReviewState, config: RunnableConfig):
+    """Detect programming language from code."""
+    query = state['messages'][-1].content.lower()
+    
+    languages = {
+        "python": ["def ", "import ", "print(", ".py", "django", "flask"],
+        "javascript": ["function", "const ", "let ", "var ", "=>", ".js"],
+        "java": ["public class", "void ", "system.out", ".java"],
+        "sql": ["select ", "insert ", "update ", "delete ", "drop "],
+        "bash": ["#!/bin/bash", "chmod", "sudo", "apt-get"],
+        "dockerfile": ["from ", "run ", "cmd ", "expose", "workdir"],
+    }
+    
+    detected = "general"
+    for lang, keywords in languages.items():
+        if any(kw in query for kw in keywords):
+            detected = lang
+            break
+    
+    return {"language": detected}
+
+def security_scanner_node(state: CodeReviewState, config: RunnableConfig):
+    """Scan code for security vulnerabilities."""
+    query = state['messages'][-1].content.lower()
+    
+    security_red_flags = [
+        "sql", "select *", "exec(", "eval(",
+        "password", "secret", "api_key",
+        "shell=true", "subprocess",
+        "md5", "sha1",
+    ]
+    
+    has_issue = any(flag in query for flag in security_red_flags)
+    return {"has_security_issue": has_issue}
+
+def performance_scanner_node(state: CodeReviewState, config: RunnableConfig):
+    """Scan code for performance issues."""
+    query = state['messages'][-1].content.lower()
+    
+    performance_red_flags = [
+        "for i in range", "while true",
+        "select *", "time.sleep",
+        "global ", "nested for",
+        ".append(", "string +",
+    ]
+    
+    has_issue = any(flag in query for flag in performance_red_flags)
+    return {"has_performance_issue": has_issue}
+
+def review_generator_node(state: CodeReviewState, config: RunnableConfig):
+    """Generate comprehensive code review."""
+    thread_id = get_thread_id_from_config(config)
+    query = state['messages'][-1].content
+    rag_context = get_rag_context(thread_id, query)
+
+    # Dynamic prompt based on detected issues
+    security_note = "⚠️ SECURITY ISSUES DETECTED — Review carefully!" if state['has_security_issue'] else "No obvious security issues detected."
+    performance_note = "⚠️ PERFORMANCE ISSUES DETECTED — Optimize!" if state['has_performance_issue'] else "No obvious performance issues detected."
+
+    prompt = SystemMessage(content=f"""
+You are the Code Review Agent inside DeployMate AI.
+Language Detected: {state['language']}
+Security Pre-scan: {security_note}
+Performance Pre-scan: {performance_note}
+
+ALWAYS respond in this structure:
+
+## 🔍 Code Summary
+What this code does briefly.
+
+## 🚨 Security Issues
+{'Focus heavily here — issues were pre-detected!' if state['has_security_issue'] else 'Check for any vulnerabilities.'}
+
+## ⚡ Performance Issues
+{'Focus heavily here — issues were pre-detected!' if state['has_performance_issue'] else 'Check for bottlenecks.'}
+
+## ❌ Bad Practices
+Anti-patterns specific to {state['language']}.
+
+## ✅ Improved Code
+Provide complete fixed version with explanations.
+
+{f'DOCUMENT CONTEXT: {rag_context}' if rag_context else ''}
+""")
+
+    messages = [prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response]}
+
+
+def build_code_review_subgraph():
+    """Build and return the code review pipeline subgraph."""
+    subgraph = StateGraph(CodeReviewState)
+
+    subgraph.add_node("language_detector", language_detector_node)
+    subgraph.add_node("security_scanner", security_scanner_node)
+    subgraph.add_node("performance_scanner", performance_scanner_node)
+    subgraph.add_node("review_generator", review_generator_node)
+
+    subgraph.add_edge(START, "language_detector")
+    subgraph.add_edge("language_detector", "security_scanner")
+    subgraph.add_edge("security_scanner", "performance_scanner")
+    subgraph.add_edge("performance_scanner", "review_generator")
+    subgraph.add_edge("review_generator", END)
+
+    return subgraph.compile()
 
 #_________________________________________________________________________________
 
 error_analysis_Subgraph = build_error_analysis_subgraph()
 deployment_Subgraph = build_deployment_subgraph()
+code_review_Subgraph = build_code_review_subgraph()
 
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
 
@@ -651,9 +734,8 @@ graph = StateGraph(ChatState)
 # addinng nodes..
 graph.add_node('chat_node', chat_node)
 graph.add_node('error_analyzer_node', error_analysis_Subgraph)
-graph.add_node('fix_suggester_node', deployment_Subgraph)
-graph.add_node('deploy_guide_node', deploy_guide_node)
-graph.add_node('code_review_node', code_review_node)
+graph.add_node('deploy_guide_node', deployment_Subgraph)
+graph.add_node('code_review_node', code_review_Subgraph)
 
 # Conditional routing — START to either error analyzer or regular chat based on message content.
 graph.add_conditional_edges(START, route_message, {
@@ -665,12 +747,9 @@ graph.add_conditional_edges(START, route_message, {
 
 #adding edges.
 graph.add_edge('error_analyzer_node', END)
-
-# Both fix suggester and regular chat lead to END, allowing the conversation to conclude after either path.
-graph.add_edge('fix_suggester_node', END)
-graph.add_edge('chat_node', END)
 graph.add_edge('deploy_guide_node', END)
 graph.add_edge('code_review_node', END)
+graph.add_edge('chat_node', END)
 
 chatbot = graph.compile(checkpointer=checkpointer, interrupt_before=[])
 
