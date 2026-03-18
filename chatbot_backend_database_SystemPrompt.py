@@ -138,6 +138,11 @@ class ErrorAnalysisState(TypedDict):
     severity: str          # Critical/Warning/Info
     has_fix: bool          # Fix mila ya nahi
 
+class DeploymentState(TypedDict):
+    messages: Annotated[List[BaseMessage], add_messages]
+    tech_stack: str        # Python/Node/React etc
+    target_platform: str   # AWS/Railway/Render/VPS
+    has_dockerfile: bool   # Dockerfile needed?
 
 # ─── ERROR DETECTOR ───────────────────────────────────────
 _THREAD_RETRIEVERS = {}
@@ -444,7 +449,8 @@ def rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
     }
 
 
-#_________________________SubGraph Nodes_____________________________
+#--------------------------SubGraph Nodes-------------------------------------------
+
 def error_parser_node(state: ErrorAnalysisState, config: RunnableConfig):
     """Identify what type of error this is."""
     query = state['messages'][-1].content
@@ -534,9 +540,108 @@ def build_error_analysis_subgraph():
 
     return subgraph.compile()
 
+def stack_detector_node(state: DeploymentState, config: RunnableConfig):
+    """Detect user's tech stack from message."""
+    query = state['messages'][-1].content.lower()
+    
+    stacks = {
+        "python": ["python", "flask", "django", "fastapi"],
+        "nodejs": ["node", "express", "npm", "javascript"],
+        "react": ["react", "nextjs", "vite"],
+        "docker": ["docker", "dockerfile", "container"],
+    }
+    
+    detected = "general"
+    for stack, keywords in stacks.items():
+        if any(kw in query for kw in keywords):
+            detected = stack
+            break
+    
+    return {"tech_stack": detected}
+
+def platform_selector_node(state: DeploymentState, config: RunnableConfig):
+    """Detect target deployment platform."""
+    query = state['messages'][-1].content.lower()
+    
+    platforms = {
+        "railway": ["railway"],
+        "aws": ["aws", "ec2", "s3"],
+        "render": ["render"],
+        "vps": ["vps", "digitalocean", "linode"],
+    }
+    
+    detected = "railway"  # Default — easiest for beginners
+    for platform, keywords in platforms.items():
+        if any(kw in query for kw in keywords):
+            detected = platform
+            break
+    
+    return {"target_platform": detected}
+
+def config_generator_node(state: DeploymentState, config: RunnableConfig):
+    """Generate deployment configuration."""
+    thread_id = get_thread_id_from_config(config)
+    query = state['messages'][-1].content
+    rag_context = get_rag_context(thread_id, query)
+
+    prompt = SystemMessage(content=f"""
+You are the Deployment Guide Agent inside DeployMate AI.
+Tech Stack Detected: {state['tech_stack']}
+Target Platform: {state['target_platform']}
+
+Provide deployment configuration specific to {state['tech_stack']} on {state['target_platform']}.
+
+ALWAYS respond in this structure:
+
+## 🎯 Deployment Plan
+What will be deployed and where.
+
+## 📋 Prerequisites
+What needs to be ready before deploying.
+
+## ⚙️ Configuration
+Dockerfile, env vars, ports for {state['tech_stack']}.
+
+## 🚀 Step-by-Step Guide
+Exact commands for {state['target_platform']}.
+
+## ✅ Verification
+How to confirm deployment was successful.
+
+{f'DOCUMENT CONTEXT: {rag_context}' if rag_context else ''}
+""")
+
+    messages = [prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response]}
+
+def steps_generator_node(state: DeploymentState, config: RunnableConfig):
+    """Generate final deployment checklist."""
+    # Just pass through — config_generator already complete response deta hai
+    return state
+
+def build_deployment_subgraph():
+    """Build and return the deployment pipeline subgraph."""
+    subgraph = StateGraph(DeploymentState)
+
+    subgraph.add_node("stack_detector", stack_detector_node)
+    subgraph.add_node("platform_selector", platform_selector_node)
+    subgraph.add_node("config_generator", config_generator_node)
+    subgraph.add_node("steps_generator", steps_generator_node)
+
+    subgraph.add_edge(START, "stack_detector")
+    subgraph.add_edge("stack_detector", "platform_selector")
+    subgraph.add_edge("platform_selector", "config_generator")
+    subgraph.add_edge("config_generator", "steps_generator")
+    subgraph.add_edge("steps_generator", END)
+
+    return subgraph.compile()
+
+
 #_________________________________________________________________________________
 
 error_analysis_Subgraph = build_error_analysis_subgraph()
+deployment_Subgraph = build_deployment_subgraph()
 
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
 
@@ -546,7 +651,7 @@ graph = StateGraph(ChatState)
 # addinng nodes..
 graph.add_node('chat_node', chat_node)
 graph.add_node('error_analyzer_node', error_analysis_Subgraph)
-graph.add_node('fix_suggester_node', fix_suggester_node)
+graph.add_node('fix_suggester_node', deployment_Subgraph)
 graph.add_node('deploy_guide_node', deploy_guide_node)
 graph.add_node('code_review_node', code_review_node)
 
