@@ -26,12 +26,13 @@ os.environ["LANGCHAIN_PROJECT"] = "DeployMate-AI"
 
 llm = ChatOllama(
     model="llama3.2:3b",
-    base_url="http://host.docker.internal:11434"  
+    #base_url="http://host.docker.internal:11434",
+    streaming=True
 )
 
 embeddings = OllamaEmbeddings(
     model="nomic-embed-text",
-    base_url="http://host.docker.internal:11434"  
+    #base_url="http://host.docker.internal:11434"  
 )
 
 #---------------------Prompts-----------------------
@@ -130,6 +131,12 @@ Be constructive, educational, and specific.
 
 class ChatState(TypedDict):
     messages : Annotated[List[BaseMessage],add_messages]
+
+class ErrorAnalysisState(TypedDict):
+    messages: Annotated[List[BaseMessage], add_messages]
+    error_type: str        # Docker/CI/Python etc
+    severity: str          # Critical/Warning/Info
+    has_fix: bool          # Fix mila ya nahi
 
 
 # ─── ERROR DETECTOR ───────────────────────────────────────
@@ -437,6 +444,100 @@ def rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
     }
 
 
+#_________________________SubGraph Nodes_____________________________
+def error_parser_node(state: ErrorAnalysisState, config: RunnableConfig):
+    """Identify what type of error this is."""
+    query = state['messages'][-1].content
+    
+    # Error type detect karo
+    if "docker" in query.lower():
+        error_type = "Docker"
+    elif "pipeline" in query.lower() or "ci/cd" in query.lower():
+        error_type = "CI/CD"
+    elif "traceback" in query.lower():
+        error_type = "Python"
+    else:
+        error_type = "General"
+    
+    return {"error_type": error_type}
+
+def severity_checker_node(state: ErrorAnalysisState, config: RunnableConfig):
+    """Check how critical this error is."""
+    query = state['messages'][-1].content
+    
+    critical_keywords = ["production", "down", "crash", "data loss"]
+    severity = "Critical" if any(kw in query.lower() for kw in critical_keywords) else "Warning"
+    
+    return {"severity": severity}
+
+def solution_finder_node(state: ErrorAnalysisState, config: RunnableConfig):
+    """Find the solution based on error type and severity."""
+    thread_id = get_thread_id_from_config(config)
+    query = state['messages'][-1].content
+    rag_context = get_rag_context(thread_id, query)
+    
+    # Dynamic prompt based on error type and severity
+    prompt = SystemMessage(content=f"""
+You are the Error Analyzer Agent inside DeployMate AI.
+Error Type: {state['error_type']}
+Severity: {state['severity']}
+
+{'⚠️ CRITICAL ERROR — Provide immediate fix first!' if state['severity'] == 'Critical' else ''}
+
+ALWAYS respond in this structure:
+## 🔍 Root Cause
+## 💥 Why It Happened
+## ✅ Exact Fix
+## 🛡️ Prevention
+
+{f'DOCUMENT CONTEXT: {rag_context}' if rag_context else ''}
+""")
+    
+    messages = [prompt] + state['messages']
+    response = llm.invoke(messages)
+    return {'messages': [response], 'has_fix': True}
+
+def fix_validator_node(state: ErrorAnalysisState, config: RunnableConfig):
+    """Validate if the fix is complete and safe."""
+    # HITL check — dangerous hai?
+    if is_dangerous(state['messages'][-1].content):
+        human_decision = interrupt({
+            "type": "dangerous_command",
+            "message": "⚠️ Dangerous command detected!",
+            "suggested_response": state['messages'][-1].content,
+        })
+        if not human_decision.get("approved"):
+            safe_response = llm.invoke([
+                SystemMessage(content="Provide a SAFER alternative."),
+                *state['messages']
+            ])
+            return {'messages': [safe_response]}
+    
+    return state
+
+def build_error_analysis_subgraph():
+    """Build and return the error analysis subgraph."""
+    subgraph = StateGraph(ErrorAnalysisState)
+    
+    #Adding the Nodes..
+    subgraph.add_node("error_parser", error_parser_node)
+    subgraph.add_node("severity_checker", severity_checker_node)
+    subgraph.add_node("solution_finder", solution_finder_node)
+    subgraph.add_node("fix_validator", fix_validator_node)
+
+    # Edges add karo
+    subgraph.add_edge(START, "error_parser")
+    subgraph.add_edge("error_parser", "severity_checker")
+    subgraph.add_edge("severity_checker", "solution_finder")
+    subgraph.add_edge("solution_finder", "fix_validator")
+    subgraph.add_edge("fix_validator", END)
+
+    return subgraph.compile()
+
+#_________________________________________________________________________________
+
+error_analysis_Subgraph = build_error_analysis_subgraph()
+
 conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
 
 checkpointer = SqliteSaver(conn = conn)
@@ -444,7 +545,7 @@ graph = StateGraph(ChatState)
 
 # addinng nodes..
 graph.add_node('chat_node', chat_node)
-graph.add_node('error_analyzer_node', error_analyzer_node)
+graph.add_node('error_analyzer_node', error_analysis_Subgraph)
 graph.add_node('fix_suggester_node', fix_suggester_node)
 graph.add_node('deploy_guide_node', deploy_guide_node)
 graph.add_node('code_review_node', code_review_node)
