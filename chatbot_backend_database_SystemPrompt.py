@@ -730,7 +730,7 @@ code_review_Subgraph = build_code_review_subgraph()
 
 
 
-conn = psycopg.connect(DB_URI)
+conn = psycopg.connect(DB_URI, autocommit=True)
 checkpointer = PostgresSaver(conn = conn)
 checkpointer.setup()
 
