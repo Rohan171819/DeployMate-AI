@@ -4,7 +4,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 import os
 from langgraph.checkpoint.postgres import PostgresSaver
-import psycopg2
+import psycopg
 from dotenv import load_dotenv
 import os
 import tempfile
@@ -730,7 +730,7 @@ code_review_Subgraph = build_code_review_subgraph()
 
 
 
-conn = psycopg2.connect(DB_URI)
+conn = psycopg.connect(DB_URI)
 checkpointer = PostgresSaver(conn = conn)
 checkpointer.setup()
 
