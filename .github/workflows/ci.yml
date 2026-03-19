@@ -11,6 +11,22 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
 
+    # PostgreSQL service add karo
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5442:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -38,5 +54,7 @@ jobs:
           echo "Backend syntax OK"
 
       - name: Run Unit Tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5442/postgres
         run: |
           pytest tests/ -v --tb=short
