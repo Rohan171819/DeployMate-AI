@@ -728,8 +728,7 @@ error_analysis_Subgraph = build_error_analysis_subgraph()
 deployment_Subgraph = build_deployment_subgraph()
 code_review_Subgraph = build_code_review_subgraph()
 
-# Connection string
-DB_URI = "postgresql://postgres:postgres@localhost:5442/postgres"
+
 
 conn = psycopg2.connect(DB_URI)
 checkpointer = PostgresSaver(conn = conn)
