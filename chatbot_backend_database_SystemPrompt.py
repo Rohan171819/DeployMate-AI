@@ -3,8 +3,8 @@ from typing import TypedDict, Annotated, List, Optional
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 import os
-from langgraph.checkpoint.sqlite import SqliteSaver
-import sqlite3
+from langgraph.checkpoint.postgres import PostgresSaver
+import psycopg2
 from dotenv import load_dotenv
 import os
 import tempfile
@@ -17,6 +17,8 @@ from langgraph.graph.message import add_messages
 from langgraph.types import interrupt, Command
 
 load_dotenv() 
+
+DB_URI = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5442/postgres")
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY","")
@@ -726,9 +728,13 @@ error_analysis_Subgraph = build_error_analysis_subgraph()
 deployment_Subgraph = build_deployment_subgraph()
 code_review_Subgraph = build_code_review_subgraph()
 
-conn = sqlite3.connect(database = 'chatbot.db',check_same_thread=False)
+# Connection string
+DB_URI = "postgresql://postgres:postgres@localhost:5442/postgres"
 
-checkpointer = SqliteSaver(conn = conn)
+conn = psycopg2.connect(DB_URI)
+checkpointer = PostgresSaver(conn = conn)
+checkpointer.setup()
+
 graph = StateGraph(ChatState)
 
 # addinng nodes..
@@ -753,9 +759,13 @@ graph.add_edge('chat_node', END)
 
 chatbot = graph.compile(checkpointer=checkpointer, interrupt_before=[])
 
-def retrieve_all_threads():
-    all_threads = set()
-    for checkpoint in checkpointer.list(None):
-        all_threads.add(checkpoint.config['configurable']['thread_id'])
 
+def retrieve_all_threads():
+    """Retrieve all thread IDs from PostgreSQL checkpointer."""
+    all_threads = set()
+    try:
+        for checkpoint in checkpointer.list(None):
+            all_threads.add(checkpoint.config['configurable']['thread_id'])
+    except Exception as e:
+        print(f"Error retrieving threads: {e}")
     return list(all_threads)

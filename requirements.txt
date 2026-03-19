@@ -55,6 +55,7 @@ langchain-ollama==1.0.1
 langchain-text-splitters==1.1.1
 langgraph==1.0.9
 langgraph-checkpoint==4.0.0
+langgraph-checkpoint-postgres==3.0.5
 langgraph-checkpoint-sqlite==3.0.3
 langgraph-prebuilt==1.0.8
 langgraph-sdk==0.3.8
@@ -88,6 +89,10 @@ pluggy==1.6.0
 posthog==5.4.0
 propcache==0.4.1
 protobuf==6.33.5
+psycopg==3.3.3
+psycopg-binary==3.3.3
+psycopg-pool==3.3.0
+psycopg2-binary==2.9.11
 pyarrow==23.0.1
 pybase64==1.4.3
 pydantic==2.12.5
