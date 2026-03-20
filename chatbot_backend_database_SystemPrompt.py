@@ -15,8 +15,10 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.messages import SystemMessage
 from langgraph.graph.message import add_messages
 from langgraph.types import interrupt, Command
+from langgraph.store.postgres import PostgresStore
 
 load_dotenv() 
+
 
 DB_URI = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5442/postgres")
 
@@ -260,6 +262,52 @@ def get_thread_id_from_config(config: RunnableConfig) -> str:
 def is_dangerous(response_text: str) -> bool:
     return any(kw in response_text.lower() for kw in DANGEROUS_KEYWORDS)
 
+def extract_user_info(message: str) -> dict:
+    """Extract user preferences from message."""
+    info = {}
+    
+    # Tech stack detect karo
+    stacks = {
+        "python": ["python", "flask", "django", "fastapi"],
+        "nodejs": ["node", "express", "javascript"],
+        "react": ["react", "nextjs"],
+    }
+    for stack, keywords in stacks.items():
+        if any(kw in message.lower() for kw in keywords):
+            info["tech_stack"] = stack
+            break
+    
+    # Experience level detect karo
+    if any(kw in message.lower() for kw in ["junior", "beginner", "learning", "new to"]):
+        info["experience"] = "junior"
+    elif any(kw in message.lower() for kw in ["senior", "experienced", "expert"]):
+        info["experience"] = "senior"
+    
+    return info
+
+def save_user_memory(store, user_id: str, info: dict):
+    """Save user information to long term memory."""
+    if info:
+        namespace = ("user_profiles", user_id)
+        existing = store.get(namespace, "profile")
+        
+        if existing:
+            # Existing profile update karo
+            profile = existing.value
+            profile.update(info)
+        else:
+            profile = info
+        
+        store.put(namespace, "profile", profile)
+
+def get_user_memory(store, user_id: str) -> dict:
+    """Retrieve user information from long term memory."""
+    try:
+        namespace = ("user_profiles", user_id)
+        result = store.get(namespace, "profile")
+        return result.value if result else {}
+    except Exception:
+        return {}
 
 # ─── NODES ──────────────────────────────────────────────
 
@@ -267,6 +315,25 @@ def chat_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     query = state["messages"][-1].content
 
+    # Load long term memory
+    user_memory = get_user_memory(store, thread_id)
+    
+    # Extract and save new info
+    new_info = extract_user_info(query)
+    if new_info:
+        save_user_memory(store, thread_id, new_info)
+        user_memory.update(new_info)
+
+    # Build memory context
+    memory_context = ""
+    if user_memory:
+        memory_context = f"""
+USER PROFILE (Remember this):
+- Tech Stack: {user_memory.get('tech_stack', 'Unknown')}
+- Experience: {user_memory.get('experience', 'Unknown')}
+"""
+
+    # HITL check
     if is_dangerous(query):
         human_decision = interrupt({
             "type": "dangerous_command",
@@ -276,25 +343,20 @@ def chat_node(state: ChatState, config: RunnableConfig):
         if not human_decision.get("approved"):
             return {'messages': [SystemMessage(content="""
 I recommend NOT running this command — it can be destructive!
-
 Safer alternatives:
 - `du -sh /var/log/*` — check log sizes first
-- `journalctl --vacuum-size=100M` — safely clean logs  
+- `journalctl --vacuum-size=100M` — safely clean logs
 - `find /var/log -name "*.gz" -delete` — only compressed logs
 """)]}
 
     rag_context = get_rag_context(thread_id, query)
-    
-    # Context ko system prompt mein inject karo
-    if rag_context:
-        dynamic_prompt = SystemMessage(content=f"""
-{system_prompt.content}
 
-DOCUMENT CONTEXT (Answer based on this):
-{rag_context}
+    # ✅ Memory + RAG both inject
+    dynamic_prompt = SystemMessage(content=f"""
+{system_prompt.content}
+{memory_context if memory_context else ''}
+{f'DOCUMENT CONTEXT (Answer based on this): {rag_context}' if rag_context else ''}
 """)
-    else:
-        dynamic_prompt = system_prompt
 
     messages = [dynamic_prompt] + state['messages']
     response = llm.invoke(messages)
@@ -306,39 +368,47 @@ def error_analyzer_node(state: ChatState, config: RunnableConfig):
     query = state["messages"][-1].content
     rag_context = get_rag_context(thread_id, query)
 
-    # ─── HITL — User input pe check karo PEHLE ───
+    # Load long term memory
+    user_memory = get_user_memory(store, thread_id)
+    memory_context = ""
+    if user_memory:
+        memory_context = f"""
+USER PROFILE:
+- Tech Stack: {user_memory.get('tech_stack', 'Unknown')}
+- Experience: {user_memory.get('experience', 'Unknown')}
+"""
+
+    # HITL check
     if is_dangerous(query):
         human_decision = interrupt({
             "type": "dangerous_command",
             "message": "⚠️ Dangerous command detected!",
             "suggested_response": f"User asked for dangerous command: {query}",
         })
-
         if human_decision.get("approved"):
-            # ✅ Approved → Original response do
-            if rag_context:
-                prompt = SystemMessage(content=f"{error_analyzer_prompt.content}\nDOCUMENT CONTEXT:\n{rag_context}")
-            else:
-                prompt = error_analyzer_prompt
+            prompt = SystemMessage(content=f"""
+{error_analyzer_prompt.content}
+{memory_context if memory_context else ''}
+{f'DOCUMENT CONTEXT: {rag_context}' if rag_context else ''}
+""")
             messages = [prompt] + state['messages']
             response = llm.invoke(messages)
             return {'messages': [response]}
         else:
-            # ❌ Rejected → Safe alternative do
             return {'messages': [SystemMessage(content="""
 I recommend NOT running this command as it can be destructive.
-
-Here are safer alternatives:
+Safer alternatives:
 - Use `du -sh /var/log/*` to check log sizes first
 - Use `journalctl --vacuum-size=100M` to safely clean logs
 - Use `find /var/log -name "*.gz" -delete` for compressed logs only
 """)]}
 
-    # ─── Normal Flow — No dangerous command ───────
-    if rag_context:
-        prompt = SystemMessage(content=f"{error_analyzer_prompt.content}\nDOCUMENT CONTEXT:\n{rag_context}")
-    else:
-        prompt = error_analyzer_prompt
+    # ✅ Normal flow — Memory + RAG both inject
+    prompt = SystemMessage(content=f"""
+{error_analyzer_prompt.content}
+{memory_context if memory_context else ''}
+{f'DOCUMENT CONTEXT: {rag_context}' if rag_context else ''}
+""")
 
     messages = [prompt] + state['messages']
     response = llm.invoke(messages)
@@ -734,6 +804,11 @@ conn = psycopg.connect(DB_URI, autocommit=True)
 checkpointer = PostgresSaver(conn = conn)
 checkpointer.setup()
 
+# Long term memory store
+store_conn = psycopg.connect(DB_URI, autocommit=True)
+store = PostgresStore(store_conn)
+store.setup()
+
 graph = StateGraph(ChatState)
 
 # addinng nodes..
@@ -756,7 +831,7 @@ graph.add_edge('deploy_guide_node', END)
 graph.add_edge('code_review_node', END)
 graph.add_edge('chat_node', END)
 
-chatbot = graph.compile(checkpointer=checkpointer, interrupt_before=[])
+chatbot = graph.compile(checkpointer=checkpointer,store = store, interrupt_before=[])
 
 
 def retrieve_all_threads():
