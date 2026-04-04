@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeployMate AI - Your AI Co-Pilot for Deployment & DevOps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6C63FF',
+                        secondary: '#00D9FF',
+                        dark: '#0D0D0D',
+                        card: '#1A1A2E',
+                        text: '#E8E8E8',
+                        accent: '#FF6B6B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: #0D0D0D;
+            color: #E8E8E8;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-grid {
+            background-image: 
+                linear-gradient(rgba(108, 99, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(108, 99, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .floating-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #6C63FF;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-10px) translateX(-10px); }
+            75% { transform: translateY(-30px) translateX(5px); }
+        }
+
+        .terminal-window {
+            background: #1A1A2E;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(108, 99, 255, 0.25);
+            overflow: hidden;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot-red { background: #FF5F56; }
+        .terminal-dot-yellow { background: #FFBD2E; }
+        .terminal-dot-green { background: #27C93F; }
+
+        .typing-cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .marquee {
+            animation: marquee 30s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 0 30px rgba(108, 99, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .step-connector {
+            background: linear-gradient(90deg, #6C63FF 0%, #00D9FF 50%, #6C63FF 100%);
+            background-size: 200% 100%;
+            animation: gradientMove 3s linear infinite;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .scroll-indicator {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #6C63FF;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 2px;
+            background: #E8E8E8;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        @media (max-width: 768px) {
+            .hero-grid {
+                background-size: 30px 30px;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Navbar -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-dark/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="#" class="flex items-center gap-2 font-mono text-xl text-primary">
+                    <span>🚀</span> DeployMate AI
+                </a>
+                
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#hero" class="nav-link text-text hover:text-primary transition-colors">Home</a>
+                    <a href="#features" class="nav-link text-text hover:text-primary transition-colors">Features</a>
+                    <a href="#how-it-works" class="nav-link text-text hover:text-primary transition-colors">How It Works</a>
+                    <a href="#pricing" class="nav-link text-text hover:text-primary transition-colors">Pricing</a>
+                    <a href="#about" class="nav-link text-text hover:text-primary transition-colors">About</a>
+                    <a href="#contact" class="nav-link text-text hover:text-primary transition-colors">Contact</a>
+                </div>
+
+                <div class="hidden md:block">
+                    <a href="#" class="bg-accent text-white px-6 py-2 rounded-full font-medium hover:bg-accent/90 transition-colors">
+                        Get Started Free
+                    </a>
+                </div>
+
+                <button id="hamburger" class="md:hidden hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-card border-t border-white/5">
+            <div class="px-4 py-4 space-y-3">
+                <a href="#hero" class="block text-text hover:text-primary transition-colors">Home</a>
+                <a href="#features" class="block text-text hover:text-primary transition-colors">Features</a>
+                <a href="#how-it-works" class="block text-text hover:text-primary transition-colors">How It Works</a>
+                <a href="#pricing" class="block text-text hover:text-primary transition-colors">Pricing</a>
+                <a href="#about" class="block text-text hover:text-primary transition-colors">About</a>
+                <a href="#contact" class="block text-text hover:text-primary transition-colors">Contact</a>
+                <a href="#" class="block bg-accent text-white px-6 py-2 rounded-full font-medium text-center">
+                    Get Started Free
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="min-h-screen relative flex items-center overflow-hidden">
+        <div class="hero-grid absolute inset-0"></div>
+        <div class="floating-dot" style="top: 20%; left: 10%;"></div>
+        <div class="floating-dot" style="top: 40%; left: 80%; animation-delay: 1s;"></div>
+        <div class="floating-dot" style="top: 60%; left: 20%; animation-delay: 2s;"></div>
+        <div class="floating-dot" style="top: 80%; left: 70%; animation-delay: 3s;"></div>
+        <div class="floating-dot" style="top: 30%; left: 60%; animation-delay: 4s;"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 relative z-10">
+            <div class="grid lg:grid-cols-5 gap-12 items-center">
+                <div class="lg:col-span-3" data-aos="fade-up" data-aos-duration="1000">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                        <span class="gradient-text">Your AI-Powered DevOps Co-Pilot</span>
+                    </h1>
+                    <p class="text-lg text-gray-400 mb-8 max-w-2xl">
+                        Stop googling Docker errors at 2AM. DeployMate AI analyzes your errors, guides your deployments, and reviews your code — all running locally on your machine.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="#" class="bg-accent text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-accent/90 transition-all hover:scale-105 text-center">
+                            Start Fixing Errors →
+                        </a>
+                        <a href="#" class="border-2 border-primary text-primary px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary/10 transition-all text-center">
+                            Watch Demo
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="lg:col-span-2" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="terminal-window">
+                        <div class="flex items-center gap-2 px-4 py-3 bg-dark">
+                            <div class="terminal-dot terminal-dot-red"></div>
+                            <div class="terminal-dot terminal-dot-yellow"></div>
+                            <div class="terminal-dot terminal-dot-green"></div>
+                            <span class="ml-4 text-sm text-gray-400 font-mono">DeployMate AI</span>
+                        </div>
+                        <div class="p-4 font-mono text-sm">
+                            <div class="mb-4">
+                                <span class="text-secondary">User:</span>
+                                <span class="text-gray-300"> My Docker container keeps crashing with exit code 137</span>
+                            </div>
+                            <div id="terminal-response" class="mb-4">
+                                <span class="text-primary">DeployMate AI:</span>
+                                <span class="text-gray-300 typing-cursor"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-indicator">
+            <a href="#social-proof" class="text-gray-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Social Proof Bar -->
+    <section id="social-proof" class="bg-card py-6 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-400 mb-4">Built with</p>
+            <div class="flex items-center justify-center gap-8 sm:gap-16 flex-wrap">
+                <span class="text-xl font-mono text-gray-500">LangGraph</span>
+                <span class="text-xl font-mono text-gray-500">LangChain</span>
+                <span class="text-xl font-mono text-gray-500">Ollama</span>
+                <span class="text-xl font-mono text-gray-500">PostgreSQL</span>
+                <span class="text-xl font-mono text-gray-500">FAISS</span>
+                <span class="text-xl font-mono text-gray-500">Streamlit</span>
+                <span class="text-xl font-mono text-gray-500">Docker</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem → Solution Section -->
+    <section id="problem-solution" class="py-20 bg-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-16">
+                <div data-aos="fade-up" data-aos-duration="1000">
+                    <h2 class="text-3xl font-bold mb-8">Junior devs waste hours on this 👇</h2>
+                    <div class="space-y-6">
+                        <div class="bg-card p-6 rounded-xl border border-red-500/20">
+                            <div class="flex items-start gap-4">
+                                <span class="text-red-500 text-2xl">❌</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Googling cryptic Docker errors for hours</h3>
+                                    <p class="text-gray-400">"exit code 127", "OOM killed", "connection refused" — deciphering what they mean takes forever.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card p-6 rounded-xl border border-red-500/20">
+                            <div class="flex items-start gap-4">
+                                <span class="text-red-500 text-2xl">❌</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">CI/CD pipeline fails with zero useful logs</h3>
+                                    <p class="text-gray-400">Build fails at the same step every time. No clue what went wrong or how to fix it.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card p-6 rounded-xl border border-red-500/20">
+                            <div class="flex items-start gap-4">
+                                <span class="text-red-500 text-2xl">❌</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">No idea how to deploy to AWS/Railway/Render</h3>
+                                    <p class="text-gray-400">Your app works locally but you have no clue how to get it running in production.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                    <h2 class="text-3xl font-bold mb-8">DeployMate AI solves it instantly ✅</h2>
+                    <div class="space-y-6">
+                        <div class="bg-card p-6 rounded-xl border border-green-500/20">
+                            <div class="flex items-start gap-4">
+                                <span class="text-green-500 text-2xl">✅</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Paste error → get root cause + fix in seconds</h3>
+                                    <p class="text-gray-400">Our AI analyzes any error message and tells you exactly what's wrong and how to fix it.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card p-6 rounded-xl border border-green-500/20">
+                            <div class="flex items-start gap-4">
+                                <span class="text-green-500 text-2xl">✅</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Upload logs → agent pinpoints the failing step</h3>
+                                    <p class="text-gray-400">Paste your CI/CD logs and get clear identification of which step failed and why.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card p-6 rounded-xl border border-green-500/20">
+                            <div class="flex items-start gap-4">
+                                <span class="text-green-500 text-2xl">✅</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Describe your app → get a full deployment guide</h3>
+                                    <p class="text-gray-400">Tell us about your tech stack and we'll generate step-by-step deployment instructions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-20 bg-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-4xl font-bold mb-4">Everything You Need to Ship Confidently</h2>
+                <p class="text-gray-400 text-lg">Six powerful features designed to make deployment painless</p>
+            </div>
+            
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="feature-card bg-dark p-8 rounded-xl transition-all duration-300" data-aos="fade-up" data-aos-duration="1000">
+                    <div class="text-4xl mb-4">🔍</div>
+                    <h3 class="text-xl font-semibold mb-3">Error Analyzer</h3>
+                    <p class="text-gray-400">Paste any Docker, Python, or CI/CD error. Get root cause analysis and a step-by-step fix instantly.</p>
+                </div>
+                
+                <div class="feature-card bg-dark p-8 rounded-xl transition-all duration-300" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                    <div class="text-4xl mb-4">🚀</div>
+                    <h3 class="text-xl font-semibold mb-3">Deployment Guide</h3>
+                    <p class="text-gray-400">Describe your app stack. Get tailored deployment instructions for AWS, Railway, Render, or your own VPS.</p>
+                </div>
+                
+                <div class="feature-card bg-dark p-8 rounded-xl transition-all duration-300" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="text-4xl mb-4">👨‍💻</div>
+                    <h3 class="text-xl font-semibold mb-3">Code Review Agent</h3>
+                    <p class="text-gray-400">Paste code or a GitHub PR link. Get security, performance, and best practice feedback in seconds.</p>
+                </div>
+                
+                <div class="feature-card bg-dark p-8 rounded-xl transition-all duration-300" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                    <div class="text-4xl mb-4">🧠</div>
+                    <h3 class="text-xl font-semibold mb-3">Long-Term Memory</h3>
+                    <p class="text-gray-400">DeployMate remembers your tech stack, past errors, and preferences across all sessions.</p>
+                </div>
+                
+                <div class="feature-card bg-dark p-8 rounded-xl transition-all duration-300" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400">
+                    <div class="text-4xl mb-4">🔒</div>
+                    <h3 class="text-xl font-semibold mb-3">100% Local & Private</h3>
+                    <p class="text-gray-400">Powered by Ollama running on your machine. Your code and errors never leave your computer.</p>
+                </div>
+                
+                <div class="feature-card bg-dark p-8 rounded-xl transition-all duration-300" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="500">
+                    <div class="text-4xl mb-4">📄</div>
+                    <h3 class="text-xl font-semibold mb-3">PDF Knowledge Base</h3>
+                    <p class="text-gray-400">Upload your internal docs, runbooks, or architecture diagrams. DeployMate learns from them.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-20 bg-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-4xl font-bold mb-4">Get Answers in 3 Steps</h2>
+                <p class="text-gray-400 text-lg">Simple workflow, powerful results</p>
+            </div>
+            
+            <div class="relative">
+                <div class="hidden lg:block step-connector absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2"></div>
+                
+                <div class="grid lg:grid-cols-3 gap-8 relative">
+                    <div class="text-center" data-aos="fade-up" data-aos-duration="1000">
+                        <div class="w-20 h-20 bg-card rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 border-4 border-primary">
+                            <span class="text-3xl font-bold text-primary">1</span>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">Describe Your Problem</h3>
+                        <p class="text-gray-400">Type your error, paste a log, or describe what you're trying to deploy. No formatting required.</p>
+                    </div>
+                    
+                    <div class="text-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                        <div class="w-20 h-20 bg-card rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 border-4 border-secondary">
+                            <span class="text-3xl font-bold text-secondary">2</span>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">AI Analyzes & Routes</h3>
+                        <p class="text-gray-400">DeployMate detects the intent and routes to the right specialist agent — Error Analyzer, Deploy Guide, or Code Review.</p>
+                    </div>
+                    
+                    <div class="text-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400">
+                        <div class="w-20 h-20 bg-card rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 border-4 border-accent">
+                            <span class="text-3xl font-bold text-accent">3</span>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">Get a Fix, Not Just an Answer</h3>
+                        <p class="text-gray-400">Receive actionable steps, code snippets, and follow-up support within the same conversation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Demo CTA Strip -->
+    <section id="live-demo" class="py-16 bg-gradient-to-r from-primary/20 to-secondary/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" data-aos="fade-up" data-aos-duration="1000">
+            <h2 class="text-3xl font-bold mb-4">See DeployMate AI Fix a Real Docker Error</h2>
+            <p class="text-gray-400 mb-8 text-lg">No signup required. Runs locally on your machine.</p>
+            <a href="#" class="inline-block bg-accent text-white px-10 py-4 rounded-full font-semibold text-xl hover:bg-accent/90 transition-all hover:scale-105">
+                Try It Now →
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-card py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-12 mb-12">
+                <div>
+                    <a href="#" class="flex items-center gap-2 font-mono text-xl text-primary mb-4">
+                        <span>🚀</span> DeployMate AI
+                    </a>
+                    <p class="text-gray-400">Your AI Co-Pilot for Deployment & DevOps. Fix errors, debug CI/CD, and ship faster.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#features" class="text-gray-400 hover:text-primary transition-colors">Features</a></li>
+                        <li><a href="#pricing" class="text-gray-400 hover:text-primary transition-colors">Pricing</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition-colors">About</a></li>
+                        <li><a href="#contact" class="text-gray-400 hover:text-primary transition-colors">Contact</a></li>
+                        <li><a href="https://github.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">GitHub</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <p class="text-gray-400 mb-4">Built by Rohan | MCA Student | AI/ML Engineer</p>
+                    <div class="flex gap-4">
+                        <a href="https://github.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                        <a href="https://linkedin.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/10 pt-8 text-center">
+                <p class="text-gray-500">© 2025 DeployMate AI — Open Source | MIT License</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            offset: 100
+        });
+
+        const hamburger = document.getElementById('hamburger');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                mobileMenu.classList.add('hidden');
+                hamburger.classList.remove('active');
+            });
+        });
+
+        const terminalResponses = [
+            "Exit code 137 means OOM kill. Increase your container memory limit in docker-compose.yml:\n\nservices:\n  app:\n    mem_limit: 512m",
+            "That's likely a port binding issue. Try mapping port 3000 to 3000:\n\nports:\n  - \"3000:3000\"",
+            "The 'command not found' error usually means your entrypoint script is missing the shebang. Add '#!/bin/bash' at the top."
+        ];
+
+        let currentResponse = 0;
+
+        function typeResponse(text, element) {
+            element.innerHTML = '<span class="text-primary">DeployMate AI:</span> ';
+            let i = 0;
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+            element.appendChild(cursor);
+            
+            function type() {
+                if (i < text.length) {
+                    const char = text.charAt(i);
+                    if (char === '\n') {
+                        cursor.before(document.createElement('br'));
+                    } else {
+                        cursor.before(document.createTextNode(char));
+                    }
+                    i++;
+                    setTimeout(type, 30);
+                }
+            }
+            type();
+        }
+
+        function updateTerminal() {
+            const terminalResponse = document.getElementById('terminal-response');
+            typeResponse(terminalResponses[currentResponse], terminalResponse);
+            currentResponse = (currentResponse + 1) % terminalResponses.length;
+        }
+
+        updateTerminal();
+        setInterval(updateTerminal, 8000);
+
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
