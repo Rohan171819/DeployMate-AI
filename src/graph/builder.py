@@ -65,6 +65,16 @@ class CodeReviewState(TypedDict):
     has_performance_issue: bool
 
 
+class DockerGeneratorState(TypedDict):
+    """Docker generator subgraph state."""
+
+    messages: Annotated[list[BaseMessage], add_messages]
+    framework: str
+    ports: str
+    dependencies: str
+    entrypoint: str
+
+
 # Global store for memory
 store = None
 checkpointer = None
@@ -103,6 +113,16 @@ def _init_db():
                 error_text TEXT,
                 resolution TEXT,
                 timestamp TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS docker_configs (
+                id SERIAL PRIMARY KEY,
+                thread_id VARCHAR(255),
+                framework VARCHAR(100),
+                dockerfile TEXT,
+                docker_compose TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
             )
         """)
 
@@ -503,6 +523,7 @@ def build_graph():
     from src.agents.deployment import deployment_guide_node
     from src.agents.code_review import code_review_node
     from src.agents.github_agent import github_connector_node
+    from src.agents.docker_generator import docker_generator_node
 
     logger.info("building_main_graph")
 
@@ -517,6 +538,7 @@ def build_graph():
     graph.add_node("deploy_guide_node", deployment_subgraph)
     graph.add_node("code_review_node", code_review_subgraph)
     graph.add_node("github_connector_node", github_connector_node)
+    graph.add_node("docker_generator_node", docker_generator_node)
 
     graph.add_conditional_edges(
         START,
@@ -527,6 +549,7 @@ def build_graph():
             "deploy_guide_node": "deploy_guide_node",
             "code_review_node": "code_review_node",
             "github_connector_node": "github_connector_node",
+            "docker_generator_node": "docker_generator_node",
         },
     )
 
@@ -535,6 +558,7 @@ def build_graph():
     graph.add_edge("code_review_node", END)
     graph.add_edge("chat_node", END)
     graph.add_edge("github_connector_node", END)
+    graph.add_edge("docker_generator_node", END)
 
     _init_db()
     chatbot = graph.compile(

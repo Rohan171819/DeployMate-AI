@@ -92,6 +92,17 @@ GITHUB_KEYWORDS = [
     "/blob/",
 ]
 
+DOCKER_CONFIG_KEYWORDS = [
+    "dockerfile",
+    "docker config",
+    "docker compose",
+    "generate docker",
+    "containerize",
+    "docker image",
+    "create docker",
+    "docker setup",
+]
+
 DANGEROUS_KEYWORDS = [
     "rm -rf",
     "drop database",
@@ -165,6 +176,20 @@ def is_github_review_message(message: str) -> bool:
     return result
 
 
+def is_docker_config_message(message: str) -> bool:
+    """Detect if message is about Docker configuration.
+
+    Args:
+        message: User message to analyze.
+
+    Returns:
+        True if Docker config keywords found, False otherwise.
+    """
+    result = any(keyword in message.lower() for keyword in DOCKER_CONFIG_KEYWORDS)
+    logger.debug("intent_detection", intent="docker_config", result=result)
+    return result
+
+
 def is_dangerous(command: str) -> bool:
     """Detect if command contains dangerous keywords.
 
@@ -226,12 +251,15 @@ def route_message(state: dict, config: dict) -> str:
 
     Returns:
         Node name to route to: error_analyzer_node, deploy_guide_node,
-        code_review_node, github_connector_node, or chat_node.
+        code_review_node, github_connector_node, docker_generator_node, or chat_node.
     """
     last_message = state["messages"][-1].content
     logger.info("routing_message", message_prefix=last_message[:50])
 
-    if is_error_message(last_message):
+    if is_docker_config_message(last_message):
+        logger.info("route_selected", node="docker_generator_node")
+        return "docker_generator_node"
+    elif is_error_message(last_message):
         state_with_session = init_debug_session(state)
         state["session_id"] = state_with_session.get("session_id")
         state["debug_history"] = state.get("debug_history", [])

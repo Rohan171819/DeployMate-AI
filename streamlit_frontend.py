@@ -3,6 +3,7 @@ from src.graph.builder import chatbot
 from src.config.settings import settings
 from langchain_core.messages import HumanMessage
 import uuid
+import os
 
 
 # -----------------------------utility functions-----------------------------
@@ -117,16 +118,42 @@ if user_input:
 
     # Streaming implemented..
 
+    response_content = ""
+    artifacts = None
+
     with st.chat_message("assistant", avatar="🚀"):
-        ai_message = st.write_stream(
-            message_chunk.content
-            for message_chunk, metadata in chatbot.stream(
-                {"messages": [HumanMessage(content=user_input)]},
-                config=CONFIG,
-                stream_mode="messages",
-            )
-        )
+        for message_chunk, metadata in chatbot.stream(
+            {"messages": [HumanMessage(content=user_input)]},
+            config=CONFIG,
+            stream_mode="messages",
+        ):
+            response_content += message_chunk.content
+            st.write(message_chunk.content)
+
+    state = chatbot.get_state(config=CONFIG)
+    if state and state.values:
+        artifacts = state.values.get("generated_artifacts")
+
+    if artifacts and (artifacts.get("dockerfile") or artifacts.get("docker_compose")):
+        st.session_state["last_artifacts"] = artifacts
+
+        col1, col2 = st.columns(2)
+        with col1:
+            target_dir = st.text_input("Target directory:", value=os.getcwd())
+        with col2:
+            if st.button("Apply Docker Config"):
+                if artifacts.get("dockerfile"):
+                    dockerfile_path = os.path.join(target_dir, "Dockerfile")
+                    with open(dockerfile_path, "w") as f:
+                        f.write(artifacts["dockerfile"])
+                    st.success(f"Dockerfile saved to {dockerfile_path}")
+
+                if artifacts.get("docker_compose"):
+                    compose_path = os.path.join(target_dir, "docker-compose.yml")
+                    with open(compose_path, "w") as f:
+                        f.write(artifacts["docker_compose"])
+                    st.success(f"docker-compose.yml saved to {compose_path}")
 
     st.session_state["message_history"].append(
-        {"role": "assistant", "content": ai_message}
+        {"role": "assistant", "content": response_content}
     )
