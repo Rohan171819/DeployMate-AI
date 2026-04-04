@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     )
 
     llm_model: str = Field(
-        default="llama3.2:3b",
+        default="qwen2.5-coder:0.5b",
         description="Ollama model for chat completions",
     )
 

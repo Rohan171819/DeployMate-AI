@@ -157,7 +157,7 @@ DeployMate_AI/
 
 ## 4. Key Technologies
 
-- **LLM**: Ollama (llama3.2:3b)
+- **LLM**: Ollama (qwen2.5-coder:0.5b)
 - **Embeddings**: Ollama (nomic-embed-text)
 - **Frontend**: Streamlit
 - **Database**: PostgreSQL + FAISS (vector store)
@@ -172,7 +172,7 @@ All configuration centralized in Pydantic BaseSettings:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `database_url` | postgresql://... | PostgreSQL connection |
-| `llm_model` | llama3.2:3b | Ollama chat model |
+| `llm_model` | qwen2.5-coder:0.5b | Ollama chat model |
 | `llm_base_url` | http://host.docker.internal:11434 | Ollama API URL |
 | `embeddings_model` | nomic-embed-text | Ollama embeddings |
 | `langchain_api_key` | (empty) | LangSmith API key (optional) |
