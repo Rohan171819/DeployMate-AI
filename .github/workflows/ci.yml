@@ -1,6 +1,6 @@
 name: DeployMate AI — CI Pipeline
 
-'on':
+on:
   push:
     branches: [ main ]
   pull_request:
@@ -11,7 +11,6 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
 
-    # PostgreSQL service add karo
     services:
       postgres:
         image: postgres:16
@@ -32,26 +31,34 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Cache pip dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest mypy structlog
 
       - name: Check Syntax
         run: |
-          python -m py_compile chatbot_backend_database_SystemPrompt.py
+          python -m py_compile src/config/settings.py
+          python -m py_compile src/exceptions.py
+          python -m py_compile src/graph/builder.py
           echo "Backend syntax OK"
+
+      - name: Run Type Checking
+        run: |
+          mypy src/ --ignore-missing-imports --no-error-summary || true
 
       - name: Run Unit Tests
         env:

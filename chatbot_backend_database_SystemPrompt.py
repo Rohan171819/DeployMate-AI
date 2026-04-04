@@ -16,7 +16,9 @@ from langchain_core.messages import SystemMessage
 from langgraph.graph.message import add_messages
 from langgraph.types import interrupt, Command
 from langgraph.store.postgres import PostgresStore
-
+from langchain_core.prompts  import ChatPromptTemplate
+from pydantic import BaseModel, Field
+from langchain_community.tools import TavilySearchResults
 load_dotenv() 
 
 
@@ -30,14 +32,15 @@ os.environ["LANGCHAIN_PROJECT"] = "DeployMate-AI"
 
 llm = ChatOllama(
     model="llama3.2:3b",
-    #base_url="http://host.docker.internal:11434",
+    base_url="http://host.docker.internal:11434",
     streaming=True
 )
 
 embeddings = OllamaEmbeddings(
     model="nomic-embed-text",
-    #base_url="http://host.docker.internal:11434"  
+    base_url="http://host.docker.internal:11434"  
 )
+
 
 #---------------------Prompts-----------------------
 system_prompt = SystemMessage(content="""
@@ -117,8 +120,17 @@ Provide the fixed, improved version with explanations.
 Be constructive, educational, and specific.
 """)
 
+grade_prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are a grader assessing relevance of a retrieved document 
+     to a user question about DevOps/deployment errors. 
+     If the document contains keyword(s) or semantic meaning related to the question, 
+     grade it as relevant. Give a binary 'yes' or 'no' score."""),
+    ("human", "Retrieved document:\n{document}\n\nUser question: {question}"),
+])
 
 
+
+#---------------------Pydantic Classes----------------------------------
 
 class ChatState(TypedDict):
     messages : Annotated[List[BaseMessage],add_messages]
@@ -140,6 +152,22 @@ class CodeReviewState(TypedDict):
     language: str          # Python/JS/Java etc
     has_security_issue: bool
     has_performance_issue: bool
+
+class GradeScore(BaseModel):
+    score: int = Field(description="Relevance score from 0 to 10")
+
+class CRAGState(TypedDict):
+    question: str
+    documents: List[str]
+    generation: str
+    web_search_needed: str  # "yes" or "no"
+
+
+# Structured llm.
+structured_llm_scorer = llm.with_structured_output(GradeScore)
+
+#tool definition.
+web_search_tool = TavilySearchResults(k=3)
 
 # ─── ERROR DETECTOR ───────────────────────────────────────
 _THREAD_RETRIEVERS = {}
@@ -308,6 +336,56 @@ def get_user_memory(store, user_id: str) -> dict:
         return result.value if result else {}
     except Exception:
         return {}
+    
+def get_crag_context(thread_id: str, query: str) -> dict:
+    cache_key = f"crag:{thread_id}:{query[:80]}"
+    if cache_key in _RAG_CACHE:
+        return _RAG_CACHE[cache_key]
+
+    retriever = _get_retriever(thread_id)
+    if not retriever:
+        return {
+            "context": "",
+            "source": "none",
+            "needs_fallback": True
+        }
+
+    docs = retriever.invoke(query)
+
+    filtered_docs = []
+    for doc in docs:
+        is_relevant = grade_single_document(query, doc.page_content)
+        if is_relevant:
+            filtered_docs.append(doc)
+
+    needs_fallback = len(filtered_docs) == 0
+
+    # fallback strategy
+    final_docs = filtered_docs
+    source = "pdf"
+
+    if needs_fallback:
+        try:
+            web_docs = web_search_tool.invoke({"query": query})
+            web_text = "\n".join([d["content"] for d in web_docs]) if web_docs else ""
+            context = web_text
+            source = "web"
+        except Exception:
+            context = ""
+            source = "none"
+    else:
+        context = "\n\n".join([doc.page_content for doc in final_docs])
+
+    result = {
+        "context": context,
+        "source": source,
+        "needs_fallback": needs_fallback
+    }
+
+    _RAG_CACHE[cache_key] = result
+    return result
+
+
 
 # ─── NODES ──────────────────────────────────────────────
 
@@ -349,7 +427,8 @@ Safer alternatives:
 - `find /var/log -name "*.gz" -delete` — only compressed logs
 """)]}
 
-    rag_context = get_rag_context(thread_id, query)
+    crag = get_crag_context(thread_id, query)
+    rag_context = crag["context"]   
 
     # ✅ Memory + RAG both inject
     dynamic_prompt = SystemMessage(content=f"""
@@ -366,8 +445,9 @@ Safer alternatives:
 def error_analyzer_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     query = state["messages"][-1].content
-    rag_context = get_rag_context(thread_id, query)
-
+    
+    crag = get_crag_context(thread_id, query)
+    rag_context = crag["context"]
     # Load long term memory
     user_memory = get_user_memory(store, thread_id)
     memory_context = ""
@@ -435,7 +515,8 @@ def deploy_guide_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
     query = state["messages"][-1].content
-    rag_context = get_rag_context(thread_id, query)
+    crag = get_crag_context(thread_id, query)
+    rag_context = crag["context"]
 
     if rag_context:
         prompt = SystemMessage(content=f"""
@@ -456,7 +537,8 @@ def code_review_node(state: ChatState, config: RunnableConfig):
     thread_id = get_thread_id_from_config(config)
     
     query = state["messages"][-1].content
-    rag_context = get_rag_context(thread_id, query)
+    crag = get_crag_context(thread_id, query)
+    rag_context = crag["context"]
 
     if rag_context:
         prompt = SystemMessage(content=f"""
@@ -493,6 +575,19 @@ def rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
         "metadata": metadata,
         "source_file": _THREAD_METADATA.get(str(thread_id), {}).get("filename"),
     }
+
+def web_search(state):
+    question = state["question"]
+    docs = web_search_tool.invoke({"query": question})
+    web_results = "\n".join([d["content"] for d in docs])
+    return {"documents": [web_results], "question": question}
+
+def score_document(question: str, document: str) -> int:
+    result = structured_llm_scorer.invoke(
+        grade_prompt.format_messages(question=question, document=document)
+    )
+    return result.score
+ # 0-3-> irrelevant   4-6 -> weak    7-10 -> strong 
 
 
 #--------------------------SubGraph Nodes-------------------------------------------
@@ -629,7 +724,8 @@ def config_generator_node(state: DeploymentState, config: RunnableConfig):
     """Generate deployment configuration."""
     thread_id = get_thread_id_from_config(config)
     query = state['messages'][-1].content
-    rag_context = get_rag_context(thread_id, query)
+    crag = get_crag_context(thread_id, query)
+    rag_context = crag["context"]
 
     prompt = SystemMessage(content=f"""
 You are the Deployment Guide Agent inside DeployMate AI.
@@ -738,7 +834,8 @@ def review_generator_node(state: CodeReviewState, config: RunnableConfig):
     """Generate comprehensive code review."""
     thread_id = get_thread_id_from_config(config)
     query = state['messages'][-1].content
-    rag_context = get_rag_context(thread_id, query)
+    crag = get_crag_context(thread_id, query)
+    rag_context = crag["context"]
 
     # Dynamic prompt based on detected issues
     security_note = "⚠️ SECURITY ISSUES DETECTED — Review carefully!" if state['has_security_issue'] else "No obvious security issues detected."

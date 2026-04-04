@@ -10,6 +10,26 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - OLLAMA_HOST=0.0.0.0
 
   deploymate:
     build: .
@@ -20,9 +40,14 @@ services:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       - LANGCHAIN_TRACING_V2=true
       - LANGCHAIN_PROJECT=DeployMate-AI
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  ollama_data:
