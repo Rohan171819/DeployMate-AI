@@ -479,6 +479,7 @@ def build_graph():
     from src.agents.error_analyzer import error_analyzer_node
     from src.agents.deployment import deployment_guide_node
     from src.agents.code_review import code_review_node
+    from src.agents.github_agent import github_connector_node
 
     logger.info("building_main_graph")
 
@@ -492,6 +493,7 @@ def build_graph():
     graph.add_node("error_analyzer_node", error_analysis_subgraph)
     graph.add_node("deploy_guide_node", deployment_subgraph)
     graph.add_node("code_review_node", code_review_subgraph)
+    graph.add_node("github_connector_node", github_connector_node)
 
     graph.add_conditional_edges(
         START,
@@ -501,6 +503,7 @@ def build_graph():
             "chat_node": "chat_node",
             "deploy_guide_node": "deploy_guide_node",
             "code_review_node": "code_review_node",
+            "github_connector_node": "github_connector_node",
         },
     )
 
@@ -508,6 +511,7 @@ def build_graph():
     graph.add_edge("deploy_guide_node", END)
     graph.add_edge("code_review_node", END)
     graph.add_edge("chat_node", END)
+    graph.add_edge("github_connector_node", END)
 
     _init_db()
     chatbot = graph.compile(

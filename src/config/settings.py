@@ -74,5 +74,10 @@ class Settings(BaseSettings):
         description="Tavily API key for web search (optional)",
     )
 
+    github_token: str = Field(
+        default="",
+        description="GitHub PAT (read-only scope)",
+    )
+
 
 settings = Settings()

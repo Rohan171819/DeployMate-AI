@@ -105,3 +105,27 @@ class DangerousCommandError(DeployMateError):
         self.command = command
         self.suggested_response = suggested_response
         super().__init__(message)
+
+
+class GitHubError(Exception):
+    """Base exception for GitHub connector operations."""
+
+    pass
+
+
+class GitHubURLParseError(GitHubError):
+    """Raised when GitHub URL cannot be parsed."""
+
+    pass
+
+
+class GitHubFetchError(GitHubError):
+    """Raised when GitHub API call fails."""
+
+    pass
+
+
+class GitHubAuthError(GitHubError):
+    """Raised when GitHub token is missing or invalid."""
+
+    pass

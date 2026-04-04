@@ -1,5 +1,6 @@
 import streamlit as st
 from src.graph.builder import chatbot
+from src.config.settings import settings
 from langchain_core.messages import HumanMessage
 import uuid
 
@@ -66,6 +67,11 @@ if "thread_names" not in st.session_state:
 st.sidebar.image("deploymate-logo.svg", use_container_width=True)
 st.sidebar.title("DeployMate AI")
 st.sidebar.caption("Your AI DevOps Co-Pilot")
+
+if settings.github_token:
+    st.sidebar.success("✅ GitHub Connected")
+else:
+    st.sidebar.warning("⚠️ GitHub token not set — add GITHUB_TOKEN to .env")
 
 if st.sidebar.button("New Chat"):
     reset_chat()

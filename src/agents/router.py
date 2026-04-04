@@ -79,6 +79,17 @@ CODE_REVIEW_KEYWORDS = [
     "import ",
 ]
 
+GITHUB_KEYWORDS = [
+    "github.com",
+    "review pr",
+    "review pull request",
+    "check repo",
+    "read file from github",
+    "github repo",
+    "/pull/",
+    "/blob/",
+]
+
 DANGEROUS_KEYWORDS = [
     "rm -rf",
     "drop database",
@@ -135,6 +146,20 @@ def is_code_review_message(message: str) -> bool:
     """
     result = any(keyword in message.lower() for keyword in CODE_REVIEW_KEYWORDS)
     logger.debug("intent_detection", intent="code_review", result=result)
+    return result
+
+
+def is_github_review_message(message: str) -> bool:
+    """Detect if message contains GitHub URL or review request.
+
+    Args:
+        message: User message to analyze.
+
+    Returns:
+        True if GitHub keywords found, False otherwise.
+    """
+    result = any(keyword in message.lower() for keyword in GITHUB_KEYWORDS)
+    logger.debug("intent_detection", intent="github_review", result=result)
     return result
 
 
@@ -199,7 +224,7 @@ def route_message(state: dict, config: dict) -> str:
 
     Returns:
         Node name to route to: error_analyzer_node, deploy_guide_node,
-        code_review_node, or chat_node.
+        code_review_node, github_connector_node, or chat_node.
     """
     last_message = state["messages"][-1].content
     logger.info("routing_message", message_prefix=last_message[:50])
@@ -210,6 +235,9 @@ def route_message(state: dict, config: dict) -> str:
     elif is_deploy_message(last_message):
         logger.info("route_selected", node="deploy_guide_node")
         return "deploy_guide_node"
+    elif is_github_review_message(last_message):
+        logger.info("route_selected", node="github_connector_node")
+        return "github_connector_node"
     elif is_code_review_message(last_message):
         logger.info("route_selected", node="code_review_node")
         return "code_review_node"
