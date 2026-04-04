@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - DeployMate AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6C63FF',
+                        secondary: '#00D9FF',
+                        dark: '#0D0D0D',
+                        card: '#1A1A2E',
+                        text: '#E8E8E8',
+                        accent: '#FF6B6B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: #0D0D0D;
+            color: #E8E8E8;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-grid {
+            background-image: 
+                linear-gradient(rgba(108, 99, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(108, 99, 255, 0.08) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .violet-gradient-glow {
+            background: radial-gradient(ellipse at center, rgba(108, 99, 255, 0.15) 0%, transparent 70%);
+        }
+
+        .terminal-window {
+            background: #1A1A2E;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(108, 99, 255, 0.25);
+            overflow: hidden;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot-red { background: #FF5F56; }
+        .terminal-dot-yellow { background: #FFBD2E; }
+        .terminal-dot-green { background: #27C93F; }
+
+        .typing-cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #6C63FF;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 2px;
+            background: #E8E8E8;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .profile-card-glow {
+            box-shadow: 0 0 40px rgba(108, 99, 255, 0.3);
+        }
+
+        .timeline-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6C63FF;
+            border: 4px solid #0D0D0D;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #6C63FF 0%, #00D9FF 100%);
+            transform: translateX(-50%);
+        }
+
+        .skill-tag {
+            background: rgba(108, 99, 255, 0.15);
+            border: 1px solid rgba(108, 99, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .skill-tag:hover {
+            background: rgba(108, 99, 255, 0.3);
+            border-color: #6C63FF;
+        }
+
+        .stack-card {
+            background: linear-gradient(145deg, #1A1A2E 0%, #151528 100%);
+            border: 1px solid rgba(108, 99, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stack-card:hover {
+            border-color: rgba(108, 99, 255, 0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.15);
+        }
+
+        .social-link {
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            transform: translateY(-3px);
+            color: #6C63FF;
+        }
+
+        @media (max-width: 1024px) {
+            .timeline-dot, .timeline-line {
+                left: 20px;
+            }
+            
+            .timeline-dot {
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Navbar -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-dark/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center gap-2 font-mono text-xl text-primary">
+                    <span>🚀</span> DeployMate AI
+                </a>
+                
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="index.html#hero" class="nav-link text-text hover:text-primary transition-colors">Home</a>
+                    <a href="index.html#features" class="nav-link text-text hover:text-primary transition-colors">Features</a>
+                    <a href="index.html#how-it-works" class="nav-link text-text hover:text-primary transition-colors">How It Works</a>
+                    <a href="index.html#pricing" class="nav-link text-text hover:text-primary transition-colors">Pricing</a>
+                    <a href="about.html" class="nav-link active text-primary transition-colors">About</a>
+                    <a href="index.html#contact" class="nav-link text-text hover:text-primary transition-colors">Contact</a>
+                </div>
+
+                <div class="hidden md:block">
+                    <a href="#" class="bg-accent text-white px-6 py-2 rounded-full font-medium hover:bg-accent/90 transition-colors">
+                        Get Started Free
+                    </a>
+                </div>
+
+                <button id="hamburger" class="md:hidden hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-card border-t border-white/5">
+            <div class="px-4 py-4 space-y-3">
+                <a href="index.html#hero" class="block text-text hover:text-primary transition-colors">Home</a>
+                <a href="index.html#features" class="block text-text hover:text-primary transition-colors">Features</a>
+                <a href="index.html#how-it-works" class="block text-text hover:text-primary transition-colors">How It Works</a>
+                <a href="index.html#pricing" class="block text-text hover:text-primary transition-colors">Pricing</a>
+                <a href="about.html" class="block text-primary font-semibold">About</a>
+                <a href="index.html#contact" class="block text-text hover:text-primary transition-colors">Contact</a>
+                <a href="#" class="block bg-accent text-white px-6 py-2 rounded-full font-medium text-center">
+                    Get Started Free
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Hero -->
+    <section class="min-h-[60vh] relative flex items-center justify-center overflow-hidden pt-20">
+        <div class="hero-grid absolute inset-0"></div>
+        <div class="violet-gradient-glow absolute inset-0"></div>
+        
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10" data-aos="fade-up" data-aos-duration="1000">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                <span class="gradient-text">Built by a Developer, For Developers</span>
+            </h1>
+            <p class="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                DeployMate AI was born out of frustration — hours lost debugging Docker errors, failing CI/CD pipelines, and confusing cloud deployment docs. So I built the assistant I always wished I had.
+            </p>
+        </div>
+    </section>
+
+    <!-- The Story Section -->
+    <section class="py-20 bg-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-5 gap-12 items-start">
+                <!-- Left Column - Story Text -->
+                <div class="lg:col-span-3" data-aos="fade-right" data-aos-duration="1000">
+                    <h2 class="text-3xl sm:text-4xl font-bold mb-8">
+                        <span class="gradient-text">Why DeployMate AI Exists</span>
+                    </h2>
+                    <div class="space-y-6 text-gray-400 text-lg leading-relaxed">
+                        <p>
+                            As an MCA student building real AI systems, I constantly hit the same wall — DevOps. Docker containers crashing with cryptic exit codes. GitHub Actions workflows failing on step 7 of 12. AWS deployment guides written for engineers with 5 years of experience.
+                        </p>
+                        <p>
+                            I didn't want another chatbot that gives generic answers. I wanted an agent that knows MY stack, remembers what I've tried before, and gives me the exact command to run — not a 10-page tutorial.
+                        </p>
+                        <p>
+                            DeployMate AI is that agent. Built on LangGraph, running 100% locally via Ollama, with long-term memory that learns your project over time. No API keys. No data leaks. No subscriptions for the core experience.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right Column - Terminal Window -->
+                <div class="lg:col-span-2" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="terminal-window">
+                        <div class="flex items-center gap-2 px-4 py-3 bg-dark">
+                            <div class="terminal-dot terminal-dot-red"></div>
+                            <div class="terminal-dot terminal-dot-yellow"></div>
+                            <div class="terminal-dot terminal-dot-green"></div>
+                            <span class="ml-4 text-sm text-gray-400 font-mono">deploymate.config.yaml</span>
+                        </div>
+                        <div class="p-4 font-mono text-sm">
+                            <div class="text-gray-400 mb-2"># deploymate.config.yaml</div>
+                            <div class="mb-3"><span class="text-secondary">brain:</span> <span class="text-gray-300">ollama/llama3.2:3b</span></div>
+                            <div class="mb-3"><span class="text-secondary">memory:</span> <span class="text-gray-300">postgresql + faiss</span></div>
+                            <div class="mb-2"><span class="text-secondary">agents:</span></div>
+                            <div class="pl-4 mb-1"><span class="text-accent">-</span> <span class="text-gray-300">error_analyzer</span></div>
+                            <div class="pl-4 mb-1"><span class="text-accent">-</span> <span class="text-gray-300">deployment_guide</span></div>
+                            <div class="pl-4 mb-1"><span class="text-accent">-</span> <span class="text-gray-300">code_review</span></div>
+                            <div class="pl-4 mb-3"><span class="text-accent">-</span> <span class="text-gray-300">github_connector</span></div>
+                            <div class="mb-3"><span class="text-secondary">privacy:</span> <span class="text-green-400">100% local</span></div>
+                            <div><span class="text-secondary">status:</span> <span class="text-green-400">actively_maintained</span><span class="typing-cursor text-primary"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Builder Profile Card -->
+    <section class="py-20 bg-card">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="profile-card-glow bg-dark/50 border border-primary/30 rounded-2xl p-8 sm:p-12 text-center" data-aos="fade-up" data-aos-duration="1000">
+                <!-- Avatar -->
+                <div class="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <span class="text-5xl font-bold text-white">R</span>
+                </div>
+
+                <!-- Name & Title -->
+                <h2 class="text-3xl font-bold text-white mb-2">Rohan</h2>
+                <p class="text-xl text-gray-400 mb-2">AI/ML Engineer & MCA Student</p>
+                <p class="text-sm text-gray-500 mb-4">GL Bajaj College of Technology & Management, Greater Noida</p>
+                
+                <!-- CGPA Badge -->
+                <div class="inline-block bg-primary/20 border border-primary/40 rounded-full px-4 py-1 mb-6">
+                    <span class="text-primary font-semibold">9.5 GPA (BCA, GGSIPU) 🏆</span>
+                </div>
+
+                <!-- Bio -->
+                <p class="text-gray-400 mb-8 max-w-xl mx-auto leading-relaxed">
+                    Specializing in LangGraph, LangChain, RAG pipelines, and agentic systems. Passionate about building AI tools that solve real developer problems — not demos, but production-grade systems.
+                </p>
+
+                <!-- Skills Tags -->
+                <div class="flex flex-wrap justify-center gap-2 mb-8">
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">LangGraph</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">LangChain</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">RAG</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">Python</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">TensorFlow</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">Streamlit</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">Docker</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">GitHub Actions</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">Ollama</span>
+                    <span class="skill-tag px-4 py-2 rounded-full text-sm text-text">FAISS</span>
+                </div>
+
+                <!-- Social Links -->
+                <div class="flex justify-center gap-8">
+                    <a href="https://github.com/rohan171819" target="_blank" class="social-link flex items-center gap-2 text-gray-400">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        <span>rohan171819</span>
+                    </a>
+                    <a href="https://linkedin.com" target="_blank" class="social-link text-gray-400">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                    </a>
+                    <a href="mailto:rohan@example.com" class="social-link text-gray-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Achievements Timeline -->
+    <section class="py-20 bg-dark">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+                    <span class="gradient-text">What Went Into Building This</span>
+                </h2>
+                <p class="text-gray-400 text-lg">A journey of learning, building, and iterating</p>
+            </div>
+
+            <div class="relative">
+                <!-- Timeline Line (Desktop) -->
+                <div class="hidden lg:block timeline-line"></div>
+                
+                <!-- Timeline Items -->
+                <div class="space-y-12">
+                    <!-- Item 1 -->
+                    <div class="relative flex items-center lg:justify-start justify-left lg:pl-[calc(50%-10px)] pl-12" data-aos="fade-up" data-aos-duration="1000">
+                        <div class="hidden lg:block timeline-dot"></div>
+                        <div class="lg:hidden absolute left-0 w-5 h-5 rounded-full bg-primary border-4 border-dark"></div>
+                        <div class="bg-card p-6 rounded-xl lg:ml-8 ml-4 max-w-lg w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-2xl">🎓</span>
+                                <span class="text-primary font-semibold">Academic Excellence Award — BCA GGSIPU</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">9.5 CGPA</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="relative flex lg:justify-end justify-left lg:pr-[calc(50%-10px)] pl-12 lg:pl-0" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                        <div class="hidden lg:block timeline-dot"></div>
+                        <div class="lg:hidden absolute left-0 w-5 h-5 rounded-full bg-primary border-4 border-dark"></div>
+                        <div class="bg-card p-6 rounded-xl lg:mr-8 mr-4 max-w-lg w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-2xl">🔬</span>
+                                <span class="text-primary font-semibold">Research Published</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">Image Captioning using CNN + LSTM</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="relative flex lg:justify-start justify-left lg:pl-[calc(50%-10px)] pl-12" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                        <div class="hidden lg:block timeline-dot"></div>
+                        <div class="lg:hidden absolute left-0 w-5 h-5 rounded-full bg-primary border-4 border-dark"></div>
+                        <div class="bg-card p-6 rounded-xl lg:ml-8 ml-4 max-w-lg w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-2xl">📊</span>
+                                <span class="text-primary font-semibold">ML Internship — CivicCraft Technologies</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">UP Flood Management using ARIMA/LSTM + SWAT+ hydrological modelling</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="relative flex lg:justify-end justify-left lg:pr-[calc(50%-10px)] pl-12 lg:pl-0" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                        <div class="hidden lg:block timeline-dot"></div>
+                        <div class="lg:hidden absolute left-0 w-5 h-5 rounded-full bg-primary border-4 border-dark"></div>
+                        <div class="bg-card p-6 rounded-xl lg:mr-8 mr-4 max-w-lg w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-2xl">📉</span>
+                                <span class="text-primary font-semibold">ML Internship — Exposys Data Labs</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">Customer churn prediction model</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 5 -->
+                    <div class="relative flex lg:justify-start justify-left lg:pl-[calc(50%-10px)] pl-12" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400">
+                        <div class="hidden lg:block timeline-dot"></div>
+                        <div class="lg:hidden absolute left-0 w-5 h-5 rounded-full bg-primary border-4 border-dark"></div>
+                        <div class="bg-card p-6 rounded-xl lg:ml-8 ml-4 max-w-lg w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-2xl">🤖</span>
+                                <span class="text-primary font-semibold">DeployMate AI — Flagship Project</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">LangGraph multi-agent DevOps assistant with RAG, HITL, PostgreSQL memory, and GitHub connector</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 6 -->
+                    <div class="relative flex lg:justify-end justify-left lg:pr-[calc(50%-10px)] pl-12 lg:pl-0" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="500">
+                        <div class="hidden lg:block timeline-dot"></div>
+                        <div class="lg:hidden absolute left-0 w-5 h-5 rounded-full bg-primary border-4 border-dark"></div>
+                        <div class="bg-card p-6 rounded-xl lg:mr-8 mr-4 max-w-lg w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-2xl">🚀</span>
+                                <span class="text-primary font-semibold">Career Agent — In Progress</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">LangGraph pipeline automating LinkedIn posts, GitHub commits, resume updates, and job applications</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Deep Dive -->
+    <section class="py-20 bg-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+                    <span class="gradient-text">Under the Hood</span>
+                </h2>
+                <p class="text-gray-400 text-lg">Technologies powering DeployMate AI</p>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card 1 - Intelligence -->
+                <div class="stack-card p-6 rounded-xl" data-aos="fade-up" data-aos-duration="1000">
+                    <div class="text-4xl mb-4">🧠</div>
+                    <h3 class="text-xl font-semibold mb-4 text-primary">Intelligence</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> LangGraph
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> LangChain
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> Ollama llama3.2:3b
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Card 2 - Memory & Storage -->
+                <div class="stack-card p-6 rounded-xl" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                    <div class="text-4xl mb-4">🗄️</div>
+                    <h3 class="text-xl font-semibold mb-4 text-primary">Memory & Storage</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> PostgreSQL + psycopg v3
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> PostgresStore
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> PostgresSaver
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> FAISS
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Card 3 - DevOps & Infra -->
+                <div class="stack-card p-6 rounded-xl" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="text-4xl mb-4">🔧</div>
+                    <h3 class="text-xl font-semibold mb-4 text-primary">DevOps & Infra</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> Docker + Docker Compose
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> GitHub Actions CI/CD
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> Cloudflare Tunnel
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Card 4 - Interface -->
+                <div class="stack-card p-6 rounded-xl" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                    <div class="text-4xl mb-4">🖥️</div>
+                    <h3 class="text-xl font-semibold mb-4 text-primary">Interface</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> Streamlit
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> LangSmith
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-secondary">▸</span> PyGithub
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Open Source Philosophy Strip -->
+    <section class="py-16 bg-gradient-to-r from-primary/20 to-secondary/20">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center" data-aos="fade-up" data-aos-duration="1000">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4">
+                <span class="text-white">Open Source at Heart</span>
+            </h2>
+            <p class="text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+                DeployMate AI's core is open source. The agent pipeline, RAG system, and memory architecture are all available on GitHub. Build on it, fork it, or contribute.
+            </p>
+            <a href="https://github.com" target="_blank" class="inline-block bg-accent text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-accent/90 transition-all hover:scale-105">
+                View on GitHub →
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-card py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-12 mb-12">
+                <div>
+                    <a href="index.html" class="flex items-center gap-2 font-mono text-xl text-primary mb-4">
+                        <span>🚀</span> DeployMate AI
+                    </a>
+                    <p class="text-gray-400">Your AI Co-Pilot for Deployment & DevOps. Fix errors, debug CI/CD, and ship faster.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#features" class="text-gray-400 hover:text-primary transition-colors">Features</a></li>
+                        <li><a href="index.html#pricing" class="text-gray-400 hover:text-primary transition-colors">Pricing</a></li>
+                        <li><a href="about.html" class="text-gray-400 hover:text-primary transition-colors">About</a></li>
+                        <li><a href="#contact" class="text-gray-400 hover:text-primary transition-colors">Contact</a></li>
+                        <li><a href="https://github.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">GitHub</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <p class="text-gray-400 mb-4">Built by Rohan | MCA Student | AI/ML Engineer</p>
+                    <div class="flex gap-4">
+                        <a href="https://github.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                        <a href="https://linkedin.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/10 pt-8 text-center">
+                <p class="text-gray-500">© 2025 DeployMate AI — Open Source | MIT License</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            offset: 100
+        });
+
+        const hamburger = document.getElementById('hamburger');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                mobileMenu.classList.add('hidden');
+                hamburger.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>
