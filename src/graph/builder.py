@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from typing import Annotated
+from typing import TypedDict
 
 import structlog
 import psycopg
@@ -28,13 +29,16 @@ os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project
 
 
 # TypedDict for state
-class ChatState(dict):
+class ChatState(TypedDict):
     """Chat state for the main graph."""
 
     messages: Annotated[list[BaseMessage], add_messages]
+    session_id: str | None
+    debug_history: list[dict]
+    intent: str | None
 
 
-class ErrorAnalysisState(dict):
+class ErrorAnalysisState(TypedDict):
     """Error analysis subgraph state."""
 
     messages: Annotated[list[BaseMessage], add_messages]
@@ -43,7 +47,7 @@ class ErrorAnalysisState(dict):
     has_fix: bool
 
 
-class DeploymentState(dict):
+class DeploymentState(TypedDict):
     """Deployment subgraph state."""
 
     messages: Annotated[list[BaseMessage], add_messages]
@@ -52,7 +56,7 @@ class DeploymentState(dict):
     has_dockerfile: bool
 
 
-class CodeReviewState(dict):
+class CodeReviewState(TypedDict):
     """Code review subgraph state."""
 
     messages: Annotated[list[BaseMessage], add_messages]
@@ -82,6 +86,25 @@ def _init_db():
     store_conn = psycopg.connect(settings.database_url, autocommit=True)
     store = PostgresStore(store_conn)
     store.setup()
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS debug_sessions (
+                session_id VARCHAR(255) PRIMARY KEY,
+                user_id VARCHAR(255),
+                created_at TIMESTAMP DEFAULT NOW(),
+                iteration_count INTEGER DEFAULT 0
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS debug_errors (
+                id SERIAL PRIMARY KEY,
+                session_id VARCHAR(255) REFERENCES debug_sessions(session_id),
+                error_text TEXT,
+                resolution TEXT,
+                timestamp TIMESTAMP DEFAULT NOW()
+            )
+        """)
 
     logger.info("database_initialized")
 

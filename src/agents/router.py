@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import structlog
 
+from src.tools.debug_session import init_debug_session
+
 logger = structlog.get_logger()
 
 # Intent detection keywords
@@ -230,7 +232,14 @@ def route_message(state: dict, config: dict) -> str:
     logger.info("routing_message", message_prefix=last_message[:50])
 
     if is_error_message(last_message):
-        logger.info("route_selected", node="error_analyzer_node")
+        state_with_session = init_debug_session(state)
+        state["session_id"] = state_with_session.get("session_id")
+        state["debug_history"] = state.get("debug_history", [])
+        logger.info(
+            "route_selected",
+            node="error_analyzer_node",
+            session_id=state.get("session_id"),
+        )
         return "error_analyzer_node"
     elif is_deploy_message(last_message):
         logger.info("route_selected", node="deploy_guide_node")

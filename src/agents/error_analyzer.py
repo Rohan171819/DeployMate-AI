@@ -9,6 +9,11 @@ from langchain_core.runnables import RunnableConfig
 from src.agents.router import is_dangerous
 from src.config.settings import settings
 from src.exceptions import DangerousCommandError
+from src.tools.debug_session import (
+    add_error_to_session,
+    detect_follow_up,
+    init_debug_session,
+)
 from src.tools.memory import get_user_memory
 from src.tools.rag import get_rag_context_with_fallback
 
@@ -42,6 +47,7 @@ def error_analyzer_node(state: dict, config: RunnableConfig) -> dict:
     Handles:
     - RAG context retrieval from uploaded PDFs
     - User memory context (tech stack, experience level)
+    - Debug session context for multi-turn debugging
     - Dangerous command detection with HITL
 
     Args:
@@ -55,13 +61,34 @@ def error_analyzer_node(state: dict, config: RunnableConfig) -> dict:
         DangerousCommandError: When command requires human approval.
     """
     from langgraph.types import interrupt
+    from langchain_core.messages import AIMessage
 
     thread_id = config.get("configurable", {}).get("thread_id", "")
     query = state["messages"][-1].content
 
+    state_with_session = init_debug_session(state)
+    session_id = state_with_session.get("session_id")
+    prior_errors = state.get("debug_history", [])
+
     logger.info(
-        "error_analyzer_started", thread_id=thread_id, message_prefix=query[:50]
+        "error_analyzer_started",
+        thread_id=thread_id,
+        session_id=session_id,
+        message_prefix=query[:50],
     )
+
+    context = ""
+    is_follow_up = False
+
+    if prior_errors:
+        context = f"Session error history ({len(prior_errors)} prior errors):\n"
+        for e in prior_errors[-3:]:
+            context += f"- {e.get('error', 'N/A')}\n"
+        is_follow_up = detect_follow_up(query, prior_errors)
+        if is_follow_up:
+            context += (
+                "\n⚠️ This appears to be a follow-up error related to prior issues.\n"
+            )
 
     crag = get_rag_context_with_fallback(thread_id, query)
     rag_context = crag.get("context", "")
@@ -88,6 +115,7 @@ USER PROFILE:
             prompt = SystemMessage(
                 content=f"""
 {ERROR_ANALYZER_PROMPT.content}
+{context if context else ""}
 {memory_context if memory_context else ""}
 {f"DOCUMENT CONTEXT: {rag_context}" if rag_context else ""}
 """
@@ -100,6 +128,10 @@ USER PROFILE:
                 base_url=settings.llm_base_url,
             )
             response = llm.invoke(messages)
+
+            if session_id:
+                add_error_to_session(session_id, query, response.content)
+
             logger.info("error_analysis_completed_approved", thread_id=thread_id)
             return {"messages": [response]}
         else:
@@ -121,6 +153,7 @@ Safer alternatives:
     prompt = SystemMessage(
         content=f"""
 {ERROR_ANALYZER_PROMPT.content}
+{context if context else ""}
 {memory_context if memory_context else ""}
 {f"DOCUMENT CONTEXT: {rag_context}" if rag_context else ""}
 """
@@ -135,5 +168,20 @@ Safer alternatives:
     )
     response = llm.invoke(messages)
 
-    logger.info("error_analysis_completed", thread_id=thread_id)
-    return {"messages": [response]}
+    new_history = prior_errors + [{"error": query, "iteration": len(prior_errors) + 1}]
+
+    if session_id:
+        add_error_to_session(session_id, query, response.content)
+
+    logger.info(
+        "error_analysis_completed",
+        thread_id=thread_id,
+        session_id=session_id,
+        is_follow_up=is_follow_up,
+    )
+
+    return {
+        "messages": [response],
+        "debug_history": new_history,
+        "session_id": session_id,
+    }
