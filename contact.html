@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - DeployMate AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6C63FF',
+                        secondary: '#00D9FF',
+                        dark: '#0D0D0D',
+                        card: '#1A1A2E',
+                        text: '#E8E8E8',
+                        accent: '#FF6B6B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: #0D0D0D;
+            color: #E8E8E8;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-grid {
+            background-image: 
+                linear-gradient(rgba(108, 99, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(108, 99, 255, 0.08) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .violet-gradient-glow {
+            background: radial-gradient(ellipse at center, rgba(108, 99, 255, 0.15) 0%, rgba(0, 217, 255, 0.08) 50%, transparent 70%);
+        }
+
+        .cyan-gradient-glow {
+            background: radial-gradient(ellipse at center, rgba(0, 217, 255, 0.12) 0%, transparent 60%);
+        }
+
+        .terminal-window {
+            background: #1A1A2E;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(108, 99, 255, 0.25);
+            overflow: hidden;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot-red { background: #FF5F56; }
+        .terminal-dot-yellow { background: #FFBD2E; }
+        .terminal-dot-green { background: #27C93F; }
+
+        .typing-cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #6C63FF;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 2px;
+            background: #E8E8E8;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .form-input {
+            background: #1A1A2E;
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #6C63FF;
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+
+        .form-input.error {
+            border-color: #FF6B6B;
+        }
+
+        .form-select {
+            background: #1A1A2E;
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236C63FF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #6C63FF;
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .success-checkmark {
+            animation: scaleIn 0.5s ease-out forwards;
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+
+        .accordion-item {
+            transition: all 0.3s ease;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .accordion-item.active .accordion-content {
+            max-height: 500px;
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-item.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Navbar -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-dark/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center gap-2 font-mono text-xl text-primary">
+                    <span>🚀</span> DeployMate AI
+                </a>
+                
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="index.html#hero" class="nav-link text-text hover:text-primary transition-colors">Home</a>
+                    <a href="index.html#features" class="nav-link text-text hover:text-primary transition-colors">Features</a>
+                    <a href="index.html#how-it-works" class="nav-link text-text hover:text-primary transition-colors">How It Works</a>
+                    <a href="index.html#pricing" class="nav-link text-text hover:text-primary transition-colors">Pricing</a>
+                    <a href="about.html" class="nav-link text-text hover:text-primary transition-colors">About</a>
+                    <a href="contact.html" class="nav-link active text-primary transition-colors">Contact</a>
+                </div>
+
+                <div class="hidden md:block">
+                    <a href="#" class="bg-accent text-white px-6 py-2 rounded-full font-medium hover:bg-accent/90 transition-colors">
+                        Get Started Free
+                    </a>
+                </div>
+
+                <button id="hamburger" class="md:hidden hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-card border-t border-white/5">
+            <div class="px-4 py-4 space-y-3">
+                <a href="index.html#hero" class="block text-text hover:text-primary transition-colors">Home</a>
+                <a href="index.html#features" class="block text-text hover:text-primary transition-colors">Features</a>
+                <a href="index.html#how-it-works" class="block text-text hover:text-primary transition-colors">How It Works</a>
+                <a href="index.html#pricing" class="block text-text hover:text-primary transition-colors">Pricing</a>
+                <a href="about.html" class="block text-text hover:text-primary transition-colors">About</a>
+                <a href="contact.html" class="block text-primary font-semibold">Contact</a>
+                <a href="#" class="block bg-accent text-white px-6 py-2 rounded-full font-medium text-center">
+                    Get Started Free
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Hero -->
+    <section class="min-h-[40vh] relative flex items-center justify-center overflow-hidden pt-20">
+        <div class="hero-grid absolute inset-0"></div>
+        <div class="cyan-gradient-glow absolute inset-0"></div>
+        <div class="violet-gradient-glow absolute inset-0"></div>
+        
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10" data-aos="fade-up" data-aos-duration="1000">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                <span class="gradient-text">Let's Build Something Together</span>
+            </h1>
+            <p class="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                Have a question about DeployMate AI? Want to collaborate, report a bug, or just say hello? I'd love to hear from you.
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Content - Two Column Layout -->
+    <section class="py-20 bg-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-12 gap-12">
+                <!-- Left Column - Contact Form (55%) -->
+                <div class="lg:col-span-7" data-aos="fade-right" data-aos-duration="1000">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-8">
+                        <span class="gradient-text">Send a Message</span>
+                    </h2>
+                    
+                    <div class="bg-card p-8 rounded-2xl border border-white/5">
+                        <!-- Form -->
+                        <form id="contact-form" class="space-y-6">
+                            <!-- Full Name -->
+                            <div>
+                                <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">Full Name</label>
+                                <input type="text" id="name" name="name" placeholder="Your name" 
+                                    class="form-input w-full px-4 py-3 rounded-lg text-text placeholder-gray-500">
+                                <p class="error-message text-accent text-sm mt-1 hidden">Please enter your name</p>
+                            </div>
+                            
+                            <!-- Email Address -->
+                            <div>
+                                <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">Email Address</label>
+                                <input type="email" id="email" name="email" placeholder="you@example.com" 
+                                    class="form-input w-full px-4 py-3 rounded-lg text-text placeholder-gray-500">
+                                <p class="error-message text-accent text-sm mt-1 hidden">Please enter a valid email address</p>
+                            </div>
+                            
+                            <!-- Subject -->
+                            <div>
+                                <label for="subject" class="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">Subject</label>
+                                <select id="subject" name="subject" class="form-select w-full px-4 py-3 rounded-lg text-text">
+                                    <option value="">Select a subject</option>
+                                    <option value="general">General Inquiry</option>
+                                    <option value="bug">Bug Report</option>
+                                    <option value="feature">Feature Request</option>
+                                    <option value="collaboration">Collaboration</option>
+                                    <option value="job">Job Opportunity</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <p class="error-message text-accent text-sm mt-1 hidden">Please select a subject</p>
+                            </div>
+                            
+                            <!-- Message -->
+                            <div>
+                                <label for="message" class="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">Message</label>
+                                <textarea id="message" name="message" rows="6" placeholder="Describe your question or idea..."
+                                    class="form-input w-full px-4 py-3 rounded-lg text-text placeholder-gray-500 resize-none"></textarea>
+                                <p class="error-message text-accent text-sm mt-1 hidden">Please enter your message</p>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn-gradient w-full py-4 rounded-lg text-white font-semibold text-lg">
+                                Send Message →
+                            </button>
+                        </form>
+
+                        <!-- Success State -->
+                        <div id="success-state" class="hidden text-center py-8">
+                            <div class="success-checkmark w-24 h-24 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                <svg class="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Message sent!</h3>
+                            <p class="text-gray-400 mb-2">I'll get back to you within 24 hours.</p>
+                            <a href="https://github.com" target="_blank" class="inline-flex items-center gap-2 text-primary hover:text-secondary transition-colors">
+                                <span>In the meantime, check out DeployMate AI on GitHub</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Contact Info (45%) -->
+                <div class="lg:col-span-5" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-8">
+                        <span class="gradient-text">Other Ways to Reach Me</span>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <!-- Email Card -->
+                        <div class="bg-card p-5 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div class="flex items-start gap-4">
+                                <div class="text-2xl">📧</div>
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-secondary mb-1">Drop a mail</p>
+                                    <a href="mailto:rohan@deploymate.ai" class="text-text hover:text-primary transition-colors">rohan@deploymate.ai</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LinkedIn Card -->
+                        <div class="bg-card p-5 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div class="flex items-start gap-4">
+                                <div class="text-2xl">💼</div>
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-secondary mb-1">Connect professionally</p>
+                                    <a href="#" class="text-text hover:text-primary transition-colors">linkedin.com/in/rohan-ai</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GitHub Card -->
+                        <div class="bg-card p-5 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div class="flex items-start gap-4">
+                                <div class="text-2xl">🐙</div>
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-secondary mb-1">Explore the code</p>
+                                    <a href="https://github.com/rohan171819" target="_blank" class="text-text hover:text-primary transition-colors">github.com/rohan171819</a>
+                                    <p class="text-gray-500 text-sm mt-1">Star ⭐ DeployMate AI if it helped you</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Card -->
+                        <div class="bg-card p-5 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div class="flex items-start gap-4">
+                                <div class="text-2xl">📍</div>
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-secondary mb-1">Based in</p>
+                                    <p class="text-text">Greater Noida, Uttar Pradesh, India 🇮🇳</p>
+                                    <p class="text-gray-500 text-sm mt-1">Open to remote opportunities worldwide</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Availability Status -->
+                    <div class="mt-6 bg-card p-5 rounded-xl border border-green-500/30">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="w-3 h-3 bg-green-500 rounded-full pulse-dot"></span>
+                            <span class="text-text font-semibold">Available for</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-gray-300">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-sm">Freelance AI/ML Projects</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-gray-300">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-sm">Open Source Collaboration</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-gray-300">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-sm">Junior AI Engineer Roles (Full-time)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Time -->
+                    <div class="mt-4 terminal-window p-4">
+                        <div class="font-mono text-sm">
+                            <span class="text-secondary">⚡</span>
+                            <span class="text-gray-400">Typical response time:</span>
+                            <span class="text-green-400">&lt; 24 hours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Strip -->
+    <section class="py-20 bg-card">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+                    <span class="gradient-text">Common Questions</span>
+                </h2>
+            </div>
+
+            <div class="space-y-4">
+                <!-- FAQ Item 1 -->
+                <div class="accordion-item bg-dark rounded-xl border border-white/5 overflow-hidden" data-aos="fade-up" data-aos-duration="1000">
+                    <button class="accordion-toggle w-full px-6 py-4 flex items-center justify-between text-left">
+                        <span class="text-text font-medium">Is DeployMate AI free to use?</span>
+                        <svg class="accordion-icon w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="px-6 pb-4 text-gray-400">
+                            The core version is completely free and open source. A Pro tier with cloud deployment and team features is coming soon.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="accordion-item bg-dark rounded-xl border border-white/5 overflow-hidden" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                    <button class="accordion-toggle w-full px-6 py-4 flex items-center justify-between text-left">
+                        <span class="text-text font-medium">Does it require an internet connection?</span>
+                        <svg class="accordion-icon w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="px-6 pb-4 text-gray-400">
+                            No. The core agent runs entirely on your local machine via Ollama. Web search (Tavily) and GitHub connector are optional features.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="accordion-item bg-dark rounded-xl border border-white/5 overflow-hidden" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                    <button class="accordion-toggle w-full px-6 py-4 flex items-center justify-between text-left">
+                        <span class="text-text font-medium">Can I self-host DeployMate AI for my team?</span>
+                        <svg class="accordion-icon w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="px-6 pb-4 text-gray-400">
+                            Yes. DeployMate AI is Docker-ready. Clone the repo, set your env vars, and run docker-compose up. Full guide in the README.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="accordion-item bg-dark rounded-xl border border-white/5 overflow-hidden" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                    <button class="accordion-toggle w-full px-6 py-4 flex items-center justify-between text-left">
+                        <span class="text-text font-medium">What LLMs does it support?</span>
+                        <svg class="accordion-icon w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="px-6 pb-4 text-gray-400">
+                            Currently llama3.2:3b via Ollama. Any Ollama-compatible model can be swapped in via the LLM_MODEL env var.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 5 -->
+                <div class="accordion-item bg-dark rounded-xl border border-white/5 overflow-hidden" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400">
+                    <button class="accordion-toggle w-full px-6 py-4 flex items-center justify-between text-left">
+                        <span class="text-text font-medium">I found a bug. How do I report it?</span>
+                        <svg class="accordion-icon w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="px-6 pb-4 text-gray-400">
+                            Open a GitHub Issue on the DeployMate AI repository or use the contact form above with subject 'Bug Report'.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 6 -->
+                <div class="accordion-item bg-dark rounded-xl border border-white/5 overflow-hidden" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="500">
+                    <button class="accordion-toggle w-full px-6 py-4 flex items-center justify-between text-left">
+                        <span class="text-text font-medium">Are you open to collaborating on AI projects?</span>
+                        <svg class="accordion-icon w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="px-6 pb-4 text-gray-400">
+                            Absolutely. I'm actively looking for interesting AI/ML projects to contribute to. Use the form above or reach out on LinkedIn.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-card py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-12 mb-12">
+                <div>
+                    <a href="index.html" class="flex items-center gap-2 font-mono text-xl text-primary mb-4">
+                        <span>🚀</span> DeployMate AI
+                    </a>
+                    <p class="text-gray-400">Your AI Co-Pilot for Deployment & DevOps. Fix errors, debug CI/CD, and ship faster.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#features" class="text-gray-400 hover:text-primary transition-colors">Features</a></li>
+                        <li><a href="index.html#pricing" class="text-gray-400 hover:text-primary transition-colors">Pricing</a></li>
+                        <li><a href="about.html" class="text-gray-400 hover:text-primary transition-colors">About</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-primary transition-colors">Contact</a></li>
+                        <li><a href="https://github.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">GitHub</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <p class="text-gray-400 mb-4">Built by Rohan | MCA Student | AI/ML Engineer</p>
+                    <div class="flex gap-4">
+                        <a href="https://github.com/rohan171819" target="_blank" class="text-gray-400 hover:text-primary transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                        <a href="https://linkedin.com" target="_blank" class="text-gray-400 hover:text-primary transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/10 pt-8 text-center">
+                <p class="text-gray-500">© 2025 DeployMate AI — Open Source | MIT License</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            offset: 100
+        });
+
+        const hamburger = document.getElementById('hamburger');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Form validation and submission
+        const contactForm = document.getElementById('contact-form');
+        const successState = document.getElementById('success-state');
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function showError(input, message) {
+            input.classList.add('error');
+            const errorMsg = input.parentElement.querySelector('.error-message');
+            if (errorMsg) {
+                errorMsg.textContent = message;
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function clearError(input) {
+            input.classList.remove('error');
+            const errorMsg = input.parentElement.querySelector('.error-message');
+            if (errorMsg) {
+                errorMsg.classList.add('hidden');
+            }
+        }
+
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let isValid = true;
+            const name = document.getElementById('name');
+            const email = document.getElementById('email');
+            const subject = document.getElementById('subject');
+            const message = document.getElementById('message');
+
+            // Validate name
+            if (!name.value.trim()) {
+                showError(name, 'Please enter your name');
+                isValid = false;
+            } else {
+                clearError(name);
+            }
+
+            // Validate email
+            if (!email.value.trim()) {
+                showError(email, 'Please enter your email address');
+                isValid = false;
+            } else if (!validateEmail(email.value.trim())) {
+                showError(email, 'Please enter a valid email address');
+                isValid = false;
+            } else {
+                clearError(email);
+            }
+
+            // Validate subject
+            if (!subject.value) {
+                showError(subject, 'Please select a subject');
+                isValid = false;
+            } else {
+                clearError(subject);
+            }
+
+            // Validate message
+            if (!message.value.trim()) {
+                showError(message, 'Please enter your message');
+                isValid = false;
+            } else {
+                clearError(message);
+            }
+
+            if (isValid) {
+                contactForm.classList.add('hidden');
+                successState.classList.remove('hidden');
+                successState.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+        // Clear errors on input
+        document.querySelectorAll('.form-input, .form-select').forEach(input => {
+            input.addEventListener('input', () => clearError(input));
+            input.addEventListener('change', () => clearError(input));
+        });
+
+        // Accordion functionality
+        const accordionItems = document.querySelectorAll('.accordion-item');
+
+        accordionItems.forEach(item => {
+            const toggle = item.querySelector('.accordion-toggle');
+            toggle.addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+                
+                // Close all accordions
+                accordionItems.forEach(i => i.classList.remove('active'));
+                
+                // Open clicked one if it wasn't active
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
