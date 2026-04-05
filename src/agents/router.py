@@ -242,7 +242,7 @@ def extract_user_info(message: str) -> dict:
     return info
 
 
-def route_message(state: dict, config: dict) -> str:
+def route_message(state: dict, config: dict | None = None) -> str:
     """Route message to appropriate agent based on intent detection.
 
     Args:

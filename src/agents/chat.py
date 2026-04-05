@@ -52,6 +52,7 @@ def chat_node(state: dict, config: RunnableConfig) -> dict:
         DangerousCommandError: When command requires human approval.
     """
     from langgraph.types import interrupt
+    from src.graph.builder import store
 
     thread_id = config.get("configurable", {}).get("thread_id", "")
     query = state["messages"][-1].content

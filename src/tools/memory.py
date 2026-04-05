@@ -27,19 +27,34 @@ def get_user_memory(store, user_id: str) -> dict:
     Raises:
         MemoryReadError: On database connection failures.
     """
-    namespace = ("user_profiles", user_id)
+    if not user_id:
+        return {}
+
+    namespace = ("user_profiles", str(user_id))
     try:
         result = store.get(namespace, "profile")
         if result is not None:
             logger.debug("memory_retrieved", user_id=user_id)
-            return result.value
+            value = result.value
+            if isinstance(value, dict):
+                return value
+            elif isinstance(value, str):
+                import json
+
+                try:
+                    return json.loads(value)
+                except:
+                    return {}
+            else:
+                logger.warning(
+                    "unexpected_memory_format", user_id=user_id, type=type(value)
+                )
+                return {}
         logger.debug("no_memory_found", user_id=user_id)
         return {}
     except Exception as e:
         logger.error("memory_read_failed", user_id=user_id, error=str(e))
-        raise MemoryReadError(
-            f"Failed to read user memory: {e}", user_id=user_id
-        ) from e
+        return {}
 
 
 def save_user_memory(store, user_id: str, info: dict) -> None:
@@ -53,17 +68,25 @@ def save_user_memory(store, user_id: str, info: dict) -> None:
     Raises:
         MemoryWriteError: On database write failures.
     """
-    if not info:
+    if not info or not user_id:
         logger.debug("empty_info_skipping_save", user_id=user_id)
         return
 
-    namespace = ("user_profiles", user_id)
+    namespace = ("user_profiles", str(user_id))
     try:
         existing = store.get(namespace, "profile")
         if existing:
             profile = existing.value
             if isinstance(profile, dict):
                 profile.update(info)
+            elif isinstance(profile, str):
+                import json
+
+                try:
+                    profile = json.loads(profile)
+                    profile.update(info)
+                except:
+                    profile = info
             else:
                 profile = info
         else:
@@ -73,9 +96,6 @@ def save_user_memory(store, user_id: str, info: dict) -> None:
         logger.info("memory_saved", user_id=user_id, keys=list(info.keys()))
     except Exception as e:
         logger.error("memory_write_failed", user_id=user_id, error=str(e))
-        raise MemoryWriteError(
-            f"Failed to save user memory: {e}", user_id=user_id
-        ) from e
 
 
 def get_thread_id_from_config(config: RunnableConfig) -> str:

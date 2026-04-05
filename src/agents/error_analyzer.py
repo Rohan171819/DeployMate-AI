@@ -9,6 +9,7 @@ from langchain_core.runnables import RunnableConfig
 from src.agents.router import is_dangerous
 from src.config.settings import settings
 from src.exceptions import DangerousCommandError
+from src.graph.builder import store
 from src.tools.debug_session import (
     add_error_to_session,
     detect_follow_up,
