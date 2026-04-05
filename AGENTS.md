@@ -3,11 +3,14 @@
 ## Quick Commands
 ```bash
 pip install -r requirements.txt          # Install deps
-pytest tests/ -v --tb=short              # Run tests
+pytest tests/unit/ -v --tb=short         # Run unit tests only (NOT tests/)
 mypy src/ --ignore-missing-imports       # Type check
 streamlit run streamlit_frontend.py       # Run app
 docker-compose up --build                # Full stack
 ```
+
+## Important: CI Runs Only tests/unit/
+The CI workflow (`.github/workflows/ci.yml`) runs only `pytest tests/unit/`. The `tests/` directory contains old broken files that will fail - do NOT include them in CI or test runs.
 
 ## Common Pitfalls
 
@@ -18,10 +21,10 @@ from src.graph.builder import store  # Required, not optional
 
 **Router config is optional:**
 ```python
-def route_message(state: dict, config: dict | None = None) -> str:  # Can be None
+def route_message(state: dict, config: RunnableConfig | None = None) -> str:
 ```
 
-**Memory tools return {} on failure** (don't raise):
+**Memory tools return {} on failure** (don't raise exceptions):
 ```python
 get_user_memory(store, user_id)  # Returns {} if user_id empty or read fails
 save_user_memory(store, user_id, info)  # No-op if user_id empty
@@ -32,8 +35,8 @@ save_user_memory(store, user_id, info)  # No-op if user_id empty
 - **Entry point**: `src/graph/builder.py` → builds LangGraph with 6 agent nodes
 - **Agents**: `chat`, `error_analyzer`, `deploy_guide`, `code_review`, `github_connector`, `docker_generator`
 - **State**: Uses `ChatState` TypedDict with `messages`, `session_id`, `debug_history`, `intent`
-- **Intent detection**: Keyword-based in `src/agents/router.py` (`is_error_message`, `is_deployment_request`, etc.)
-- **Memory**: PostgresStore via `src/graph/builder.store` (global, lazy-initialized)
+- **Intent detection**: Keyword-based in `src/agents/router.py`
+- **Memory**: PostgresStore via `src.graph.builder.store` (global, lazy-initialized)
 - **Checkpointer**: PostgresSaver for conversation persistence
 
 ## Docker Development
@@ -45,7 +48,7 @@ save_user_memory(store, user_id, info)  # No-op if user_id empty
 ## Code Style
 
 - 4 spaces, max 100 chars, snake_case functions/variables, PascalCase classes
-- Use Python 3.10+ type hints: `str | None`, `list[X]`
+- Python 3.10+ type hints: `str | None`, `list[X]`
 - Use `structlog` for logging
 - All public functions need docstrings
 
@@ -59,3 +62,4 @@ save_user_memory(store, user_id, info)  # No-op if user_id empty
 | `src/tools/memory.py` | User memory (read/write) |
 | `src/tools/rag.py` | FAISS + PDF ingestion |
 | `streamlit_frontend.py` | Streamlit UI |
+| `.github/workflows/ci.yml` | CI pipeline (runs tests/unit/) |
