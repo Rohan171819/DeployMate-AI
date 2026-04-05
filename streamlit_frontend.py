@@ -362,7 +362,7 @@ st.sidebar.markdown(
 )
 
 try:
-    st.sidebar.image("deploymate-logo.svg", use_container_width=True)
+    st.sidebar.image("deploymate-logo.svg", width="stretch")
 except Exception:
     st.sidebar.markdown("🚀")
 
@@ -380,7 +380,7 @@ else:
 
 st.sidebar.markdown("### 💬 Chats")
 
-if st.sidebar.button("➕ New Chat", use_container_width=True):
+if st.sidebar.button("➕ New Chat", width="stretch"):
     reset_chat()
 
 st.sidebar.markdown("---")
@@ -390,7 +390,7 @@ for thread_id in st.session_state["chat_threads"][::-1]:
     is_active = str(thread_id) == str(st.session_state["thread_id"])
 
     if st.sidebar.button(
-        f"💬 {thread_name}", key=f"thread_{thread_id}", use_container_width=True
+        f"💬 {thread_name}", key=f"thread_{thread_id}", width="stretch"
     ):
         st.session_state["thread_id"] = thread_id
         messages = load_conversations(thread_id)

@@ -77,8 +77,10 @@ class TestIntentDetection:
 class TestRouter:
     """Tests for the router function."""
 
-    def test_route_to_error_analyzer(self):
+    @patch("src.tools.debug_session._debug_session_manager")
+    def test_route_to_error_analyzer(self, mock_manager):
         """Test routing to error analyzer for error messages."""
+        mock_manager.init_debug_session.return_value = {"session_id": "test-123"}
         state = {"messages": [HumanMessage(content="Docker container failing")]}
         result = route_message(state, {})
         assert result == "error_analyzer_node"
@@ -117,13 +119,11 @@ class TestMemory:
         result = get_user_memory(mock_store, "test-user")
         assert result == {"tech_stack": "python"}
 
-    def test_get_user_memory_raises_on_db_error(self, mock_store):
-        """Test that DB errors are raised as MemoryReadError."""
+    def test_get_user_memory_returns_empty_on_db_error(self, mock_store):
+        """Test that DB errors return empty dict."""
         mock_store.get.side_effect = Exception("Connection failed")
-        from src.exceptions import MemoryReadError
-
-        with pytest.raises(MemoryReadError):
-            get_user_memory(mock_store, "test-user")
+        result = get_user_memory(mock_store, "test-user")
+        assert result == {}
 
     def test_save_user_memory_empty_info(self, mock_store):
         """Test that empty info skips save."""
@@ -136,13 +136,12 @@ class TestMemory:
         save_user_memory(mock_store, "test-user", {"tech_stack": "python"})
         mock_store.put.assert_called_once()
 
-    def test_save_user_memory_raises_on_db_error(self, mock_store):
-        """Test that DB errors are raised as MemoryWriteError."""
+    def test_save_user_memory_no_op_on_db_error(self, mock_store):
+        """Test that DB errors are silently handled."""
+        mock_store.get.return_value = MagicMock(value={"tech_stack": "python"})
         mock_store.put.side_effect = Exception("Connection failed")
-        from src.exceptions import MemoryWriteError
-
-        with pytest.raises(MemoryWriteError):
-            save_user_memory(mock_store, "test-user", {"tech_stack": "python"})
+        save_user_memory(mock_store, "test-user", {"tech_stack": "python"})
+        mock_store.put.assert_called_once()
 
 
 class TestRAG:

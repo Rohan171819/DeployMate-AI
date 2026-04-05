@@ -89,12 +89,10 @@ class TestDetectFollowUp:
 class TestInitDebugSessionFunction:
     """Tests for init_debug_session helper function."""
 
-    @patch("src.tools.debug_session.DebugSessionManager")
-    def test_init_debug_session_wrapper(self, mock_manager_class):
+    @patch("src.tools.debug_session._debug_session_manager")
+    def test_init_debug_session_wrapper(self, mock_manager):
         """Test wrapper function calls manager."""
-        mock_manager = MagicMock()
         mock_manager.init_debug_session.return_value = {"session_id": "test-123"}
-        mock_manager_class.return_value = mock_manager
 
         state = {}
         result = init_debug_session(state)

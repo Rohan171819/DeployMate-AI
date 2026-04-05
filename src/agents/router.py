@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import structlog
+from langchain_core.runnables import RunnableConfig
 
 from src.tools.debug_session import init_debug_session
 
@@ -242,7 +243,7 @@ def extract_user_info(message: str) -> dict:
     return info
 
 
-def route_message(state: dict, config: dict | None = None) -> str:
+def route_message(state: dict, config: "RunnableConfig | None" = None) -> str:
     """Route message to appropriate agent based on intent detection.
 
     Args:
