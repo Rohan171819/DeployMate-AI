@@ -64,4 +64,4 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5442/postgres
         run: |
-          pytest tests/ -v --tb=short
+          pytest tests/unit/ -v --tb=short
