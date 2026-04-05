@@ -405,7 +405,159 @@ for thread_id in st.session_state["chat_threads"][::-1]:
         st.session_state["message_history"] = temp_messages
 
 
-# --------------------Main UI-------------------------------
+# Initialize page selection
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "Chat"
+
+# --------------------Page Tabs-------------------------------
+page = st.radio(
+    "Navigation",
+    ["💬 Chat", "🏠 Home", "ℹ️ About", "📞 Contact"],
+    index=["💬 Chat", "🏠 Home", "ℹ️ About", "📞 Contact"].index(
+        f"💬 {st.session_state['current_page']}"
+        if st.session_state["current_page"] != "Chat"
+        else "💬 Chat"
+    )
+    if st.session_state.get("current_page")
+    else 0,
+    horizontal=True,
+)
+
+# Extract page name from selection
+selected_page = page.split(" ")[1] if page else "Chat"
+st.session_state["current_page"] = selected_page
+
+# --------------------Page Content-------------------------------
+if selected_page == "Home":
+    st.markdown("---")
+    st.markdown(
+        """
+    <div style="text-align: center; padding: 40px 20px;">
+        <h1 style="font-size: 48px; margin-bottom: 20px;">
+            <span style="background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;">🚀 DeployMate AI</span>
+        </h1>
+        <h2 style="color: #888; font-weight: 400;">Your AI DevOps Co-Pilot</h2>
+        <p style="font-size: 18px; color: #aaa; margin-top: 20px;">
+            Instantly solve Docker errors, get deployment guides, and review your code — 
+            all in one place!
+        </p>
+        <div style="margin-top: 40px;">
+            <h3 style="color: #6C63FF;">🔍 What can I help you with?</h3>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px;">
+                <span style="background: rgba(108, 99, 255, 0.2); padding: 10px 20px; border-radius: 20px;">🐳 Docker Errors</span>
+                <span style="background: rgba(0, 217, 255, 0.2); padding: 10px 20px; border-radius: 20px;">☁️ Deployment</span>
+                <span style="background: rgba(255, 107, 107, 0.2); padding: 10px 20px; border-radius: 20px;">🔒 Code Review</span>
+                <span style="background: rgba(39, 201, 63, 0.2); padding: 10px 20px; border-radius: 20px;">🐙 GitHub Integration</span>
+                <span style="background: rgba(255, 189, 46, 0.2); padding: 10px 20px; border-radius: 20px;">🐳 Docker Config</span>
+            </div>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
+    st.info("💬 Go to the **Chat** tab to start asking questions!")
+
+elif selected_page == "About":
+    st.markdown("---")
+    st.markdown(
+        """
+    <div style="padding: 20px;">
+        <h1 style="color: #6C63FF;">ℹ️ About DeployMate AI</h1>
+        
+        <div style="background: rgba(108, 99, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h3>🎯 Our Mission</h3>
+            <p style="color: #aaa;">Making DevOps accessible to everyone with the power of AI.</p>
+        </div>
+        
+        <div style="background: rgba(0, 217, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h3>⚡ Features</h3>
+            <ul style="color: #aaa; line-height: 2;">
+                <li>🐳 <strong>Docker Error Analysis</strong> - Debug container issues instantly</li>
+                <li>☁️ <strong>Deployment Guides</strong> - Deploy to Railway, Render, AWS, and more</li>
+                <li>🔒 <strong>Code Review</strong> - Get security and performance suggestions</li>
+                <li>🐙 <strong>GitHub Integration</strong> - Analyze PRs and repositories</li>
+                <li>🐳 <strong>Docker Config Generator</strong> - Auto-generate Dockerfiles and docker-compose</li>
+            </ul>
+        </div>
+        
+        <div style="background: rgba(255, 107, 107, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h3>🛠️ Built With</h3>
+            <p style="color: #aaa;">
+                <strong>Backend:</strong> LangGraph, LangChain, PostgreSQL, Ollama (LLM)<br>
+                <strong>Frontend:</strong> Streamlit<br>
+                <strong>AI:</strong> Qwen2.5-Coder (Local LLM)
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #666;">
+            <p>🚀 DeployMate AI © 2026 | Made with ❤️</p>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+elif selected_page == "Contact":
+    st.markdown("---")
+    st.markdown(
+        """
+    <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #6C63FF;">📞 Contact Us</h1>
+        
+        <div style="background: rgba(108, 99, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h3>💬 Get in Touch</h3>
+            <p style="color: #aaa;">Have questions or feedback? We'd love to hear from you!</p>
+            
+            <div style="margin-top: 20px;">
+                <p><strong>📧 Email:</strong> support@deploymate.ai</p>
+                <p><strong>🐙 GitHub:</strong> github.com/Rohan171819/DeployMate-AI</p>
+                <p><strong>💬 Discord:</strong> Join our community!</p>
+            </div>
+        </div>
+        
+        <div style="background: rgba(0, 217, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h3>🤝 Contribute</h3>
+            <p style="color: #aaa;">DeployMate AI is open source! Contributions are welcome.</p>
+            <pre style="background: #1A1A2E; padding: 15px; border-radius: 8px; overflow-x: auto;"><code>git clone https://github.com/Rohan171819/DeployMate-AI.git
+cd DeployMate-AI
+pip install -r requirements.txt
+streamlit run streamlit_frontend.py</code></pre>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+elif selected_page == "Chat":
+    st.markdown(
+        """
+    <div style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(0, 217, 255, 0.1) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(108, 99, 255, 0.2);">
+        <h1 style="margin: 0; font-size: 28px;">
+            <span style="background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;">🚀 DeployMate AI</span>
+        </h1>
+        <p style="margin: 8px 0 0 0; color: #888;">
+            Your AI DevOps Co-Pilot — Ask me about Docker errors, deployment guides, or code reviews
+        </p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+
+    for message in st.session_state["message_history"]:
+        avatar = "👨‍💻" if message["role"] == "user" else "🚀"
+        with st.chat_message(message["role"], avatar=avatar):
+            st.markdown(message["content"])
 
 st.markdown(
     """
