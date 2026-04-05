@@ -405,30 +405,12 @@ for thread_id in st.session_state["chat_threads"][::-1]:
         st.session_state["message_history"] = temp_messages
 
 
-# Initialize page selection
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = "Chat"
-
 # --------------------Page Tabs-------------------------------
-page = st.radio(
-    "Navigation",
-    ["💬 Chat", "🏠 Home", "ℹ️ About", "📞 Contact"],
-    index=["💬 Chat", "🏠 Home", "ℹ️ About", "📞 Contact"].index(
-        f"💬 {st.session_state['current_page']}"
-        if st.session_state["current_page"] != "Chat"
-        else "💬 Chat"
-    )
-    if st.session_state.get("current_page")
-    else 0,
-    horizontal=True,
+tab_chat, tab_home, tab_about, tab_contact = st.tabs(
+    ["💬 Chat", "🏠 Home", "ℹ️ About", "📞 Contact"]
 )
 
-# Extract page name from selection
-selected_page = page.split(" ")[1] if page else "Chat"
-st.session_state["current_page"] = selected_page
-
-# --------------------Page Content-------------------------------
-if selected_page == "Home":
+with tab_home:
     st.markdown("---")
     st.markdown(
         """
@@ -460,7 +442,8 @@ if selected_page == "Home":
     st.markdown("---")
     st.info("💬 Go to the **Chat** tab to start asking questions!")
 
-elif selected_page == "About":
+
+with tab_about:
     st.markdown("---")
     st.markdown(
         """
@@ -500,7 +483,8 @@ elif selected_page == "About":
         unsafe_allow_html=True,
     )
 
-elif selected_page == "Contact":
+
+with tab_contact:
     st.markdown("---")
     st.markdown(
         """
@@ -514,24 +498,20 @@ elif selected_page == "Contact":
             <div style="margin-top: 20px;">
                 <p><strong>📧 Email:</strong> support@deploymate.ai</p>
                 <p><strong>🐙 GitHub:</strong> github.com/Rohan171819/DeployMate-AI</p>
-                <p><strong>💬 Discord:</strong> Join our community!</p>
             </div>
         </div>
         
         <div style="background: rgba(0, 217, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
             <h3>🤝 Contribute</h3>
             <p style="color: #aaa;">DeployMate AI is open source! Contributions are welcome.</p>
-            <pre style="background: #1A1A2E; padding: 15px; border-radius: 8px; overflow-x: auto;"><code>git clone https://github.com/Rohan171819/DeployMate-AI.git
-cd DeployMate-AI
-pip install -r requirements.txt
-streamlit run streamlit_frontend.py</code></pre>
         </div>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
-elif selected_page == "Chat":
+
+with tab_chat:
     st.markdown(
         """
     <div style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(0, 217, 255, 0.1) 100%);
