@@ -7,7 +7,7 @@ import os
 
 st.set_page_config(
     page_title="DeployMate AI",
-    page_icon="Rocket",
+    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -364,7 +364,7 @@ st.sidebar.markdown(
 try:
     st.sidebar.image("deploymate-logo.svg", width="stretch")
 except Exception:
-    st.sidebar.markdown("*")
+    st.sidebar.markdown("🚀")
 
 st.sidebar.markdown(
     '<p class="sidebar-title">DeployMate AI</p>', unsafe_allow_html=True
@@ -374,13 +374,13 @@ st.sidebar.caption("Your AI DevOps Co-Pilot")
 st.sidebar.markdown("---")
 
 if settings.github_token:
-    st.sidebar.success("GitHub Connected")
+    st.sidebar.success("✅ GitHub Connected")
 else:
-    st.sidebar.warning("GitHub token not set")
+    st.sidebar.warning("⚠️ GitHub token not set")
 
-st.sidebar.markdown("### Chats")
+st.sidebar.markdown("### 💬 Chats")
 
-if st.sidebar.button("+ New Chat", width="stretch"):
+if st.sidebar.button("➕ New Chat", width="stretch"):
     reset_chat()
 
 st.sidebar.markdown("---")
@@ -390,7 +390,7 @@ for thread_id in st.session_state["chat_threads"][::-1]:
     is_active = str(thread_id) == str(st.session_state["thread_id"])
 
     if st.sidebar.button(
-        f"Chat {thread_name}", key=f"thread_{thread_id}", width="stretch"
+        f"💬 {thread_name}", key=f"thread_{thread_id}", width="stretch"
     ):
         st.session_state["thread_id"] = thread_id
         messages = load_conversations(thread_id)
@@ -407,7 +407,7 @@ for thread_id in st.session_state["chat_threads"][::-1]:
 
 # --------------------Page Tabs-------------------------------
 tab_chat, tab_home, tab_about, tab_contact = st.tabs(
-    ["Chat", "Home", "About", "Contact"]
+    ["💬 Chat", "🏠 Home", "ℹ️ About", "📞 Contact"]
 )
 
 with tab_home:
@@ -418,21 +418,21 @@ with tab_home:
         <h1 style="font-size: 48px; margin-bottom: 20px;">
             <span style="background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
                         -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;">DeployMate AI</span>
+                        -webkit-text-fill-color: transparent;">🚀 DeployMate AI</span>
         </h1>
         <h2 style="color: #888; font-weight: 400;">Your AI DevOps Co-Pilot</h2>
         <p style="font-size: 18px; color: #aaa; margin-top: 20px;">
-            Instantly solve Docker errors, get deployment guides, and review your code -- 
+            Instantly solve Docker errors, get deployment guides, and review your code — 
             all in one place!
         </p>
         <div style="margin-top: 40px;">
-            <h3 style="color: #6C63FF;">What can I help you with?</h3>
+            <h3 style="color: #6C63FF;">🔍 What can I help you with?</h3>
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px;">
-                <span style="background: rgba(108, 99, 255, 0.2); padding: 10px 20px; border-radius: 20px;">Docker Errors</span>
-                <span style="background: rgba(0, 217, 255, 0.2); padding: 10px 20px; border-radius: 20px;">Deployment</span>
-                <span style="background: rgba(255, 107, 107, 0.2); padding: 10px 20px; border-radius: 20px;">Code Review</span>
-                <span style="background: rgba(39, 201, 63, 0.2); padding: 10px 20px; border-radius: 20px;">GitHub Integration</span>
-                <span style="background: rgba(255, 189, 46, 0.2); padding: 10px 20px; border-radius: 20px;">Docker Config</span>
+                <span style="background: rgba(108, 99, 255, 0.2); padding: 10px 20px; border-radius: 20px;">🐳 Docker Errors</span>
+                <span style="background: rgba(0, 217, 255, 0.2); padding: 10px 20px; border-radius: 20px;">☁️ Deployment</span>
+                <span style="background: rgba(255, 107, 107, 0.2); padding: 10px 20px; border-radius: 20px;">🔒 Code Review</span>
+                <span style="background: rgba(39, 201, 63, 0.2); padding: 10px 20px; border-radius: 20px;">🐙 GitHub Integration</span>
+                <span style="background: rgba(255, 189, 46, 0.2); padding: 10px 20px; border-radius: 20px;">🐳 Docker Config</span>
             </div>
         </div>
     </div>
@@ -440,7 +440,7 @@ with tab_home:
         unsafe_allow_html=True,
     )
     st.markdown("---")
-    st.info("Go to the Chat tab to start asking questions!")
+    st.info("💬 Go to the **Chat** tab to start asking questions!")
 
 
 with tab_about:
@@ -448,35 +448,35 @@ with tab_about:
     st.markdown(
         """
     <div style="padding: 20px;">
-        <h1 style="color: #6C63FF;">About DeployMate AI</h1>
+        <h1 style="color: #6C63FF;">ℹ️ About DeployMate AI</h1>
         
         <div style="background: rgba(108, 99, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <h3>Our Mission</h3>
+            <h3>🎯 Our Mission</h3>
             <p style="color: #aaa;">Making DevOps accessible to everyone with the power of AI.</p>
         </div>
         
         <div style="background: rgba(0, 217, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <h3>Features</h3>
+            <h3>⚡ Features</h3>
             <ul style="color: #aaa; line-height: 2;">
-                <li>Docker Error Analysis - Debug container issues instantly</li>
-                <li>Deployment Guides - Deploy to Railway, Render, AWS, and more</li>
-                <li>Code Review - Get security and performance suggestions</li>
-                <li>GitHub Integration - Analyze PRs and repositories</li>
-                <li>Docker Config Generator - Auto-generate Dockerfiles and docker-compose</li>
+                <li>🐳 <strong>Docker Error Analysis</strong> - Debug container issues instantly</li>
+                <li>☁️ <strong>Deployment Guides</strong> - Deploy to Railway, Render, AWS, and more</li>
+                <li>🔒 <strong>Code Review</strong> - Get security and performance suggestions</li>
+                <li>🐙 <strong>GitHub Integration</strong> - Analyze PRs and repositories</li>
+                <li>🐳 <strong>Docker Config Generator</strong> - Auto-generate Dockerfiles and docker-compose</li>
             </ul>
         </div>
         
         <div style="background: rgba(255, 107, 107, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <h3>Built With</h3>
+            <h3>🛠️ Built With</h3>
             <p style="color: #aaa;">
-                Backend: LangGraph, LangChain, PostgreSQL, Ollama (LLM)<br>
-                Frontend: Streamlit<br>
-                AI: Qwen2.5-Coder (Local LLM)
+                <strong>Backend:</strong> LangGraph, LangChain, PostgreSQL, Ollama (LLM)<br>
+                <strong>Frontend:</strong> Streamlit<br>
+                <strong>AI:</strong> Qwen2.5-Coder (Local LLM)
             </p>
         </div>
         
         <div style="text-align: center; margin-top: 30px; color: #666;">
-            <p>DeployMate AI (c) 2026 | Made with love</p>
+            <p>🚀 DeployMate AI © 2026 | Made with ❤️</p>
         </div>
     </div>
     """,
@@ -489,20 +489,20 @@ with tab_contact:
     st.markdown(
         """
     <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #6C63FF;">Contact Us</h1>
+        <h1 style="color: #6C63FF;">📞 Contact Us</h1>
         
         <div style="background: rgba(108, 99, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <h3>Get in Touch</h3>
+            <h3>💬 Get in Touch</h3>
             <p style="color: #aaa;">Have questions or feedback? We'd love to hear from you!</p>
             
             <div style="margin-top: 20px;">
-                <p>Email: support@deploymate.ai</p>
-                <p>GitHub: github.com/Rohan171819/DeployMate-AI</p>
+                <p><strong>📧 Email:</strong> support@deploymate.ai</p>
+                <p><strong>🐙 GitHub:</strong> github.com/Rohan171819/DeployMate-AI</p>
             </div>
         </div>
         
         <div style="background: rgba(0, 217, 255, 0.1); padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <h3>Contribute</h3>
+            <h3>🤝 Contribute</h3>
             <p style="color: #aaa;">DeployMate AI is open source! Contributions are welcome.</p>
         </div>
     </div>
@@ -514,163 +514,166 @@ with tab_contact:
 with tab_chat:
     st.markdown(
         """
-<div style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(0, 217, 255, 0.1) 100%);
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        border: 1px solid rgba(108, 99, 255, 0.2);">
-    <h1 style="margin: 0; font-size: 28px;">
-        <span style="background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;">DeployMate AI</span>
-    </h1>
-    <p style="margin: 8px 0 0 0; color: #888;">
-        Your AI DevOps Co-Pilot - Ask me about Docker errors, deployment guides, or code reviews
-    </p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("---")
-    for message in st.session_state["message_history"]:
-        avatar = (
-            "👨" + chr(0x200D) + chr(0x1F3BB) if message["role"] == "user" else "🚀"
-        )
-        with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
-
-
-if st.session_state["message_history"]:
-    last_msg = (
-        st.session_state["message_history"][-1]["content"]
-        if st.session_state["message_history"]
-        else ""
-    )
-    st.session_state["context_suggestions"] = get_suggestions(last_msg)
-
-if not st.session_state["message_history"]:
-    st.markdown(
-        """
-    <div class="info-box">
-        <h4 style="margin: 0 0 8px 0; color: #6C63FF;">Quick Start</h4>
-        <p style="margin: 0; color: #888; font-size: 14px;">
-            Try one of these examples or ask me anything about Docker, deployment, or code reviews!
+    <div style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(0, 217, 255, 0.1) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(108, 99, 255, 0.2);">
+        <h1 style="margin: 0; font-size: 28px;">
+            <span style="background: linear-gradient(135deg, #6C63FF 0%, #00D9FF 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;">🚀 DeployMate AI</span>
+        </h1>
+        <p style="margin: 8px 0 0 0; color: #888;">
+            Your AI DevOps Co-Pilot — Ask me about Docker errors, deployment guides, or code reviews
         </p>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
-    cols = st.columns(2)
-    quick_starts = [
-        "My Docker container keeps crashing with exit code 137",
-        "How do I deploy my Node.js app to Railway?",
-        "Review my code for security issues",
-        "Explain this error: command not found",
-    ]
+    st.markdown("---")
 
-    for i, suggestion in enumerate(quick_starts):
-        col = cols[i % 2]
-        with col:
-            if st.button(f"Suggestion: {suggestion}", key=f"quick_{i}"):
-                st.session_state["message_history"].append(
-                    {"role": "user", "content": suggestion}
-                )
-                st.rerun()
+    for message in st.session_state["message_history"]:
+        avatar = "👨‍💻" if message["role"] == "user" else "🚀"
+        with st.chat_message(message["role"], avatar=avatar):
+            st.markdown(message["content"])
 
-st.markdown("---")
+    if st.session_state["message_history"]:
+        last_msg = (
+            st.session_state["message_history"][-1]["content"]
+            if st.session_state["message_history"]
+            else ""
+        )
+        st.session_state["context_suggestions"] = get_suggestions(last_msg)
 
-if prompt := st.chat_input(
-    "Ask me about your Docker errors, deployment issues, or get code reviews..."
-):
-    st.session_state["message_history"].append({"role": "user", "content": prompt})
-
-    current_thread = str(st.session_state["thread_id"])
-    if st.session_state["thread_names"].get(current_thread) in [None, "Chat"]:
-        set_thread_name(current_thread, prompt)
-
-    with st.chat_message("user", avatar="👨‍💻"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant", avatar="Rocket"):
-        response_content = ""
-
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-
-        status_text.markdown(
+    if not st.session_state["message_history"]:
+        st.markdown(
             """
-        <div class="typing-container">
-            <div class="typing-indicator">
-                <span></span><span></span><span></span>
-            </div>
-            <span style="color: #888; margin-left: 8px;">Thinking...</span>
+        <div class="info-box">
+            <h4 style="margin: 0 0 8px 0; color: #6C63FF;">💡 Quick Start</h4>
+            <p style="margin: 0; color: #888; font-size: 14px;">
+                Try one of these examples or ask me anything about Docker, deployment, or code reviews!
+            </p>
         </div>
         """,
             unsafe_allow_html=True,
         )
 
-        total_chunks = 0
-        for message_chunk, metadata in chatbot.stream(
-            {"messages": [HumanMessage(content=prompt)]},
-            config=CONFIG,
-            stream_mode="messages",
-        ):
-            response_content += message_chunk.content
-            total_chunks += 1
-            progress = min(total_chunks / 20, 1.0)
-            progress_bar.progress(progress)
+        cols = st.columns(2)
+        quick_starts = [
+            "My Docker container keeps crashing with exit code 137",
+            "How do I deploy my Node.js app to Railway?",
+            "Review my code for security issues",
+            "Explain this error: command not found",
+        ]
 
-        progress_bar.empty()
-        status_text.empty()
+        for i, suggestion in enumerate(quick_starts):
+            col = cols[i % 2]
+            with col:
+                if st.button(f"💭 {suggestion}", key=f"quick_{i}"):
+                    st.session_state["message_history"].append(
+                        {"role": "user", "content": suggestion}
+                    )
+                    st.rerun()
 
-        st.markdown(response_content)
-
-    state = chatbot.get_state(config=CONFIG)
-    if state and state.values:
-        artifacts = state.values.get("generated_artifacts")
-
-    if artifacts and (artifacts.get("dockerfile") or artifacts.get("docker_compose")):
-        st.session_state["last_artifacts"] = artifacts
-
-        st.markdown("---")
-        st.markdown("### 🐳 Generated Docker Config")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            target_dir = st.text_input("📁 Target directory:", value=os.getcwd())
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("💾 Apply Docker Config", type="primary"):
-                if artifacts.get("dockerfile"):
-                    dockerfile_path = os.path.join(target_dir, "Dockerfile")
-                    with open(dockerfile_path, "w") as f:
-                        f.write(artifacts["dockerfile"])
-                    st.success(f"Dockerfile saved to {dockerfile_path}")
-
-                if artifacts.get("docker_compose"):
-                    compose_path = os.path.join(target_dir, "docker-compose.yml")
-                    with open(compose_path, "w") as f:
-                        f.write(artifacts["docker_compose"])
-                    st.success(f"docker-compose.yml saved to {compose_path}")
-
-    st.session_state["message_history"].append(
-        {"role": "assistant", "content": response_content}
-    )
-
-    st.session_state["context_suggestions"] = get_suggestions(response_content)
-
-if st.session_state.get("context_suggestions") and st.session_state["message_history"]:
     st.markdown("---")
-    st.markdown("### 💡 Suggested Follow-ups")
 
-    suggestion_cols = st.columns(2)
-    for i, suggestion in enumerate(st.session_state["context_suggestions"][:4]):
-        col = suggestion_cols[i % 2]
-        with col:
-            if st.button(f"Ask: {suggestion}", key=f"suggestion_{i}"):
-                st.session_state["message_history"].append(
-                    {"role": "user", "content": suggestion}
-                )
-                st.rerun()
+    if prompt := st.chat_input(
+        "💭 Ask me about your Docker errors, deployment issues, or get code reviews..."
+    ):
+        st.session_state["message_history"].append({"role": "user", "content": prompt})
+
+        current_thread = str(st.session_state["thread_id"])
+        if st.session_state["thread_names"].get(current_thread) in [None, "Chat"]:
+            set_thread_name(current_thread, prompt)
+
+        with st.chat_message("user", avatar="👨‍💻"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant", avatar="🚀"):
+            response_content = ""
+
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
+            status_text.markdown(
+                """
+            <div class="typing-container">
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+                <span style="color: #888; margin-left: 8px;">Thinking...</span>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            total_chunks = 0
+            for message_chunk, metadata in chatbot.stream(
+                {"messages": [HumanMessage(content=prompt)]},
+                config=CONFIG,
+                stream_mode="messages",
+            ):
+                response_content += message_chunk.content
+                total_chunks += 1
+                progress = min(total_chunks / 20, 1.0)
+                progress_bar.progress(progress)
+
+            progress_bar.empty()
+            status_text.empty()
+
+            st.markdown(response_content)
+
+        state = chatbot.get_state(config=CONFIG)
+        if state and state.values:
+            artifacts = state.values.get("generated_artifacts")
+
+        if artifacts and (
+            artifacts.get("dockerfile") or artifacts.get("docker_compose")
+        ):
+            st.session_state["last_artifacts"] = artifacts
+
+            st.markdown("---")
+            st.markdown("### 🐳 Generated Docker Config")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                target_dir = st.text_input("📁 Target directory:", value=os.getcwd())
+            with col2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("💾 Apply Docker Config", type="primary"):
+                    if artifacts.get("dockerfile"):
+                        dockerfile_path = os.path.join(target_dir, "Dockerfile")
+                        with open(dockerfile_path, "w") as f:
+                            f.write(artifacts["dockerfile"])
+                        st.success(f"✅ Dockerfile saved to {dockerfile_path}")
+
+                    if artifacts.get("docker_compose"):
+                        compose_path = os.path.join(target_dir, "docker-compose.yml")
+                        with open(compose_path, "w") as f:
+                            f.write(artifacts["docker_compose"])
+                        st.success(f"✅ docker-compose.yml saved to {compose_path}")
+
+        st.session_state["message_history"].append(
+            {"role": "assistant", "content": response_content}
+        )
+
+        st.session_state["context_suggestions"] = get_suggestions(response_content)
+
+    if (
+        st.session_state.get("context_suggestions")
+        and st.session_state["message_history"]
+    ):
+        st.markdown("---")
+        st.markdown("### 💡 Suggested Follow-ups")
+
+        suggestion_cols = st.columns(2)
+        for i, suggestion in enumerate(st.session_state["context_suggestions"][:4]):
+            col = suggestion_cols[i % 2]
+            with col:
+                if st.button(f"💭 {suggestion}", key=f"suggestion_{i}"):
+                    st.session_state["message_history"].append(
+                        {"role": "user", "content": suggestion}
+                    )
+                    st.rerun()
