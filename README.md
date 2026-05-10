@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/your-username/deploymate-ai/main/assets/logo.png" alt="DeployMate AI Logo" width="120" />
+
 
 # 🚀 DeployMate AI
 
